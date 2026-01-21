@@ -7,59 +7,36 @@ import {
 } from "react";
 import type { INotes } from "../types";
 
-const _EXAMPLE_INITIALS_NOTES_: INotes[] = [
-  {
-    title: "Proyecto React",
-    thinkings: [
-      "Componentes reutilizables",
-      "State management con Context API",
-      "Hooks personalizados",
-    ],
-  },
-  {
-    title: "Aprendizaje TypeScript",
-    thinkings: [
-      "Interfaces y tipos genéricos",
-      "Decoradores y metadatos",
-      "Tipos utilitarios avanzados",
-    ],
-  },
-  {
-    title: "Ideas de aplicación",
-    thinkings: [
-      "App de notas colaborativa",
-      "Sistema de autenticación OAuth",
-      "Base de datos en tiempo real",
-    ],
-  },
-  {
-    title: "Mejoras de rendimiento",
-    thinkings: [
-      "Lazy loading de componentes",
-      "Optimización de renders",
-      "Code splitting automático",
-    ],
-  },
-  {
-    title: "Próximos pasos",
-    thinkings: [
-      "Implementar persistencia en localStorage",
-      "Agregar temas oscuro/claro",
-      "Exportar notas a PDF",
-    ],
-  },
-];
-
 const STORAGE_KEY = "notes";
 
 // Cargar notas desde localStorage o usar las predeterminadas
 const loadNotesFromStorage = (): INotes[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : _EXAMPLE_INITIALS_NOTES_;
+    return stored
+      ? JSON.parse(stored)
+      : [
+          {
+            title: "Welcome to Thinking Notes!",
+            thinkings: [
+              "This is your first note. You can edit the title and add your thoughts here.",
+              "Your notes will be saved automatically in local storage.",
+              "Feel free to add, delete, and manage your notes as you like.",
+            ],
+          },
+        ];
   } catch (error) {
     console.error("Error cargando notas desde localStorage:", error);
-    return _EXAMPLE_INITIALS_NOTES_;
+    return [
+      {
+        title: "Welcome to Thinking Notes!",
+        thinkings: [
+          "This is your first note. You can edit the title and add your thoughts here.",
+          "Your notes will be saved automatically in local storage.",
+          "Feel free to add, delete, and manage your notes as you like.",
+        ],
+      },
+    ];
   }
 };
 
