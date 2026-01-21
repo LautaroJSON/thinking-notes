@@ -4,3 +4,12 @@
   grid-template-columns: auto 1fr;
   gap: 48px;
 }
+
+@media (max-width: 768px) {
+  .main-container {
+    display: block;
+    gap: 0px;
+    /* display: block; */
+    /* position: absolute; */
+  }
+}

@@ -120,6 +120,30 @@
   transition: border 0.2s ease; /* Animación suave para el focus */
 }
 
+.thinking-input-edit {
+  /* Reset de estilos base */
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+
+  /* Tipografía */
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #334155; /* Un gris pizarra oscuro profesional */
+
+  /* Estética de la caja */
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0; /* Borde suave */
+  border-radius: 12px; /* Bordes bien redondeados */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Comportamiento */
+  resize: vertical; /* Solo permitir redimensionar hacia abajo */
+  outline: none;
+  transition: border 0.2s ease; /* Animación suave para el focus */
+}
+
 /* Estado al hacer click (Focus) */
 .thinking-input:focus {
   border-color: var(--primary-color); /* Azul vibrante */
@@ -227,4 +251,17 @@
   line-height: 18px;
   user-select: none; /* Opcional: evita que el usuario seleccione el arte por error */
   color: #666666; /* Un color más claro que el texto */
+}
+
+@media (max-width: 768px) {
+  .note-c-container {
+    top: 0;
+    position: absolute;
+    height: 100vh;
+    z-index: -1;
+  }
+
+  .title-input {
+    text-align: center;
+  }
 }

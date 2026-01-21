@@ -44,6 +44,17 @@
   transition: all 0.3s ease;
 }
 
+@media (max-width: 768px) {
+  .sidebar-container {
+    &.collapsed {
+      top: 4px;
+      transform: none;
+      box-shadow: 0 0px 16px 0 rgba(31, 38, 135, 0.3);
+      width: 60px;
+    }
+  }
+}
+
 .sidebar-options {
   display: flex;
   justify-content: end;
