@@ -19,19 +19,9 @@ export default defineConfig({
         icons: [
           {
             src: "iconoapp.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "iconoapp.png",
             sizes: "345x345",
             type: "image/png",
-          },
-          {
-            src: "iconoapp.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable", // Esto es clave para que el icono se vea bien en Android
+            purpose: "any maskable",
           },
         ],
       },
