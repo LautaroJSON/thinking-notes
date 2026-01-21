@@ -1,0 +1,52 @@
+:root {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+
+  --negro: #171a21;
+  --negro-2: #232730;
+  --gris-oscuro: #292e3765;
+  --primary-color: #7890ff;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+body {
+  background-image: linear-gradient(
+    to right top,
+    #ffffff,
+    #e6e5fe,
+    #c6cdfe,
+    #9fb8ff,
+    var(--primary-color)
+  );
+  margin: 0;
+}
+
+/* Estilos para el scrollbar - WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
