@@ -1,7 +1,7 @@
-💡 Thinking Notes
+## 💡 Thinking Notes
 Thinking Notes es una aplicación web minimalista y ultra-reactiva diseñada para capturar ideas rápidas de forma organizada. El proyecto pone un foco especial en la experiencia de usuario (UX) mediante animaciones fluidas, guardado inteligente y una interfaz limpia basada en componentes reutilizables.
 
-✨ Características Principales
+## ✨ Características Principales
 Gestión de "Thinkings": Crea pensamientos dentro de cada nota. Cada uno es editable de forma independiente con auto-enfoque inteligente.
 
 Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.
@@ -20,7 +20,7 @@ Prevención de mutación directa de estado mediante copias profundas e inmutabil
 
 Control de cursor automático al final del texto en ediciones.
 
-🛠️ Stack Tecnológico
+## 🛠️ Stack Tecnológico
 Core: React 18 + TypeScript
 
 Estado Global: Context API (NotesProvider)
