@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+💡 Thinking Notes
+Thinking Notes es una aplicación web minimalista y ultra-reactiva diseñada para capturar ideas rápidas de forma organizada. El proyecto pone un foco especial en la experiencia de usuario (UX) mediante animaciones fluidas, guardado inteligente y una interfaz limpia basada en componentes reutilizables.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+✨ Características Principales
+Gestión de "Thinkings": Crea pensamientos dentro de cada nota. Cada uno es editable de forma independiente con auto-enfoque inteligente.
 
-Currently, two official plugins are available:
+Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Interfaz Dinámica:
 
-## React Compiler
+Sidebar Colapsable: Animación de rebote (bounce) al aparecer y estados colapsados para maximizar el área de trabajo.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Indicador de Guardado: Iconos dinámicos que muestran en tiempo real si tus cambios están pendientes de guardado o ya están seguros.
 
-## Expanding the ESLint configuration
+Arte ASCII Personalizado: Una pantalla de bienvenida visualmente atractiva cuando no hay notas seleccionadas.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+UX Refinada: \* Doble clic para activar notas.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Prevención de mutación directa de estado mediante copias profundas e inmutabilidad.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Control de cursor automático al final del texto en ediciones.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+🛠️ Stack Tecnológico
+Core: React 18 + TypeScript
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Estado Global: Context API (NotesProvider)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Iconografía: Lucide React
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Build Tool: Vite
+
+Estilos: CSS3 nativo con variables personalizadas y Keyframe Animations.
+
+📂 Estructura del Proyecto
+src/
+├── components/
+│ ├── notes/ # Componentes de contenido y items de nota
+│ └── sidebar/ # Navegación y acciones globales
+├── context/ # Lógica de estado global (NotesContext)
+├── hooks/ # Hooks personalizados (useDebounce, etc.)
+├── types/ # Definiciones de interfaces TypeScript
+└── App.tsx # Punto de entrada principal
+
+🚀 Instalación y Desarrollo
+Clonar el repositorio:
+
+Bash
+git clone https://github.com/LautaroJSON/thinking-notes.git
+cd thinking-notes
+Instalar dependencias:
+
+Bash
+npm install
+Ejecutar en modo desarrollo:
+
+Bash
+npm run dev
+Construir para producción:
+
+Bash
+npm run build
