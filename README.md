@@ -1,6 +1,16 @@
 ## 💡 Thinking Notes
 Thinking Notes es una aplicación web minimalista y ultra-reactiva diseñada para capturar ideas rápidas de forma organizada. El proyecto pone un foco especial en la experiencia de usuario (UX) mediante animaciones fluidas, guardado inteligente y una interfaz limpia basada en componentes reutilizables.
 
+ ```text
+⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣶⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣦⣄⣀⡀⣠⣾⡇⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⡇⠀⠀⠀⠀
+⠀⣶⣿⣦⣜⣿⣿⣿⡟⠻⣿⣿⣿⣿⣿⣿⣿⡿⢿⡏⣴⣺⣦⣙⣿⣷⣄⠀⠀⠀
+⠀⣯⡇⣻⣿⣿⣿⣿⣷⣾⣿⣬⣥⣭⣽⣿⣿⣧⣼⡇⣯⣇⣹⣿⣿⣿⣿⣧⠀⠀
+⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠸⣿⣿⣿⣿⣿⣿⣿⣷
+   ```
+
 ## ✨ Características Principales
 Gestión de "Thinkings": Crea pensamientos dentro de cada nota. Cada uno es editable de forma independiente con auto-enfoque inteligente.
 
@@ -32,6 +42,8 @@ Build Tool: Vite
 Estilos: CSS3 nativo con variables personalizadas y Keyframe Animations.
 
 ## 📂 Estructura del Proyecto
+
+ ```text
 src/
 ├── components/
 │ ├── notes/ # Componentes de contenido y items de nota
@@ -40,7 +52,7 @@ src/
 ├── hooks/ # Hooks personalizados (useDebounce, etc.)
 ├── types/ # Definiciones de interfaces TypeScript
 └── App.tsx # Punto de entrada principal
-
+```
 ## 🚀 Instalación y Desarrollo
 Clonar el repositorio:
 
