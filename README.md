@@ -31,7 +31,7 @@ Build Tool: Vite
 
 Estilos: CSS3 nativo con variables personalizadas y Keyframe Animations.
 
-📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto
 src/
 ├── components/
 │ ├── notes/ # Componentes de contenido y items de nota
@@ -41,7 +41,7 @@ src/
 ├── types/ # Definiciones de interfaces TypeScript
 └── App.tsx # Punto de entrada principal
 
-🚀 Instalación y Desarrollo
+## 🚀 Instalación y Desarrollo
 Clonar el repositorio:
 
 Bash
