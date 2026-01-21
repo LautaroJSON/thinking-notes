@@ -258,7 +258,6 @@
     top: 0;
     position: absolute;
     height: 100vh;
-    z-index: -1;
   }
 
   .title-input {

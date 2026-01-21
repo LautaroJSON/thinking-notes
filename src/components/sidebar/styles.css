@@ -46,6 +46,7 @@
 
 @media (max-width: 768px) {
   .sidebar-container {
+    z-index: 1;
     &.collapsed {
       top: 4px;
       transform: none;

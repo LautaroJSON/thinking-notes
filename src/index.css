@@ -7,6 +7,7 @@
   --negro-2: #232730;
   --gris-oscuro: #292e3765;
   --primary-color: #7890ff;
+  user-select: text;
 }
 
 h1,
