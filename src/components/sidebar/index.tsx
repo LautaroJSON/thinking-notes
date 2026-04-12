@@ -3,15 +3,35 @@ import "./styles.css";
 import { useState } from "react";
 import { useNotes } from "@/context/notesContext";
 import { NoteItem } from "../notes/noteItem";
+import useAuthentication from "@/hooks/useAuthentication";
+import { supabase } from "../../../lib/supabaseClient";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const { user, loading } = useAuthentication();
   const { notes, setActiveNote, addNote, deleteNote, activeNoteID } =
     useNotes();
+
+  const handleSignIn = async () => {
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <aside className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-options">
+        {loading ? (
+          <div>Loading...</div>
+        ) : user ? (
+          <div>{user.identities?.[0]?.identity_data?.full_name || user.email}</div>
+        ) : (
+          <span onClick={handleSignIn}>Logear</span>
+        )}
         {activeNoteID !== null ? (
           <button
             onClick={(e) => {
