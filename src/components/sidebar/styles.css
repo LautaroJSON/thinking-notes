@@ -57,10 +57,37 @@
 }
 
 .sidebar-options {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0px 20px 0px 0px;
+  gap: 12px;
+}
+
+.sidebar-user-section {
+  min-width: 0;
+}
+
+.sidebar-action-buttons {
   display: flex;
-  justify-content: end;
-  padding: 0px 20px;
-  gap: 26px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sidebar-collapsed-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 4px;
+  /* padding: 8px; */
+}
+
+.sidebar-avatar-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .circular-button {
@@ -89,13 +116,33 @@
   position: relative;
 }
 
-/* .sidebar-container::after {
-  content: "";
-  width: 130px;
-  height: 34px;
-  position: absolute;
-  background: rgb(255, 255, 255);
-  top: -34px;
-  left: 130px;
-  border-radius: 16px 16px 0px 0px;
-} */
+.sidebar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 0px 12px 12px 0px;
+  transition: background-color 0.2s;
+}
+
+.sidebar-user-info:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sidebar-user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
