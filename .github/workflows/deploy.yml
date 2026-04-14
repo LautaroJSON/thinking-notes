@@ -19,7 +19,7 @@ jobs:
           # Aquí mapeas el secreto de GitHub a la variable que usa tu código
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
