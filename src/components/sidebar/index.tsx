@@ -24,6 +24,9 @@ const Sidebar = () => {
     try {
       await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/thinking-notes/`,
+        },
       });
     } catch (error) {
       console.error(error);
