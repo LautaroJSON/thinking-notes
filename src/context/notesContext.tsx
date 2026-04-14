@@ -5,6 +5,8 @@ import {
   type ReactNode,
   useEffect,
 } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { getNotes } from "../services/service";
 import type { INotes } from "../types";
 
 const STORAGE_KEY = "notes";
@@ -50,6 +52,7 @@ interface NotesContextType {
   getActiveNote: () => INotes | null;
   closeNote: () => void;
   loadingSaveLocalStorage: boolean;
+  isLogged: boolean;
 }
 
 export const NotesContext = createContext<NotesContextType | undefined>(
@@ -60,6 +63,57 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<INotes[]>(loadNotesFromStorage());
   const [activeNoteID, setActiveNoteID] = useState<number | null>(null);
   const [loadingSaveLocalStorage, setLoadingSaveLocalStorage] = useState(false);
+  const [isLogged, setIsLogged] = useState(false);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setIsLogged(Boolean(session));
+      } catch (error) {
+        console.error("Error verificando sesión de usuario:", error);
+        setIsLogged(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setIsLogged(Boolean(session));
+      },
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const loadRemoteNotes = async () => {
+      try {
+        const remoteNotes = await getNotes();
+        setNotes(
+          remoteNotes.map((note) => ({
+            id: note.id,
+            title: note.title,
+            thinkings: note.contentList,
+          })),
+        );
+      } catch (error) {
+        console.error("Error cargando notas remotas:", error);
+        setNotes(loadNotesFromStorage());
+      }
+    };
+
+    if (isLogged) {
+      void loadRemoteNotes();
+    } else {
+      setNotes(loadNotesFromStorage());
+    }
+  }, [isLogged]);
 
   // Guardar en localStorage con debounce de 5 segundos
   useEffect(() => {
@@ -118,6 +172,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         getActiveNote,
         closeNote,
         loadingSaveLocalStorage,
+        isLogged,
       }}
     >
       {children}
