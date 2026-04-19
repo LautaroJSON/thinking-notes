@@ -17,9 +17,10 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, loading } = useAuthentication();
-  const { notes, setActiveNote, addNote, deleteNote, activeNoteID } =
+  const { notes, addNote, deleteNote, setActiveNote, getActiveNote } =
     useNotes();
 
+  const activeNoteID = getActiveNote()?.id || null;
   const handleSignIn = async () => {
     try {
       await supabase.auth.signInWithOAuth({
@@ -98,7 +99,6 @@ const Sidebar = () => {
                 className="circular-button"
                 onClick={() => {
                   addNote();
-                  setActiveNote(notes.length);
                 }}
                 title="Agregar nota"
               >
@@ -117,12 +117,12 @@ const Sidebar = () => {
       </div>
       <div className="sidebar-notes-list">
         {!collapsed &&
-          notes.map((note, index) => (
+          notes.map((note) => (
             <NoteItem
-              id={index}
-              key={index}
+              id={note.id!}
+              key={note.id!}
               title={note.title}
-              onDobleClick={() => setActiveNote(index)}
+              onDobleClick={() => setActiveNote(note.id!)}
             />
           ))}
       </div>
