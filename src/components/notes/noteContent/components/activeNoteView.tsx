@@ -1,6 +1,6 @@
 import { useNotes } from "@/context/notesContext";
 import type { INotes } from "@/types";
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Check, Pencil, Trash2 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -137,7 +137,7 @@ const ActiveNoteView = () => {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              handleNewThinking(e.target.value);
+              handleNewThinking((e.currentTarget as HTMLTextAreaElement).value);
               e.currentTarget.value = "";
             }
           }}

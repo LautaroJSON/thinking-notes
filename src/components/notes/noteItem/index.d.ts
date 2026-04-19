@@ -1,6 +1,6 @@
 import "./styles.css";
 export declare const NoteItem: ({ id, title, onDobleClick, }: {
-    id: number;
+    id: string;
     title: string;
     onDobleClick: () => void;
 }) => import("react/jsx-runtime").JSX.Element;
