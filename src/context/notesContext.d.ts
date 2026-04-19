@@ -2,15 +2,18 @@ import { type ReactNode } from "react";
 import type { INotes } from "../types";
 interface NotesContextType {
     notes: INotes[];
-    setNotes: (notes: INotes[]) => void;
     addNote: () => void;
-    deleteNote: (index: number) => void;
-    activeNoteID: number | null;
-    setActiveNote: (id: number) => void;
+    setNotes: (notes: INotes[]) => void;
+    deleteNote: (id: string) => void;
+    activeNoteState: INotes | null;
+    setActiveNote: (id: string) => void;
     getActiveNote: () => INotes | null;
-    closeNote: () => void;
-    loadingSaveLocalStorage: boolean;
+    updateActiveNote: (updates: Partial<INotes>) => void;
+    closeActiveNote: () => void;
+    loadingSaveNote: boolean;
+    setLoadingSaveNote: (value: boolean) => void;
     isLogged: boolean;
+    saveUpdatesNotesOnDBorLocalStorage: () => void;
 }
 export declare const NotesContext: import("react").Context<NotesContextType | undefined>;
 export declare const NotesProvider: ({ children }: {
