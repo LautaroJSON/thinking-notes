@@ -1,9 +1,15 @@
 import { supabase } from "../../lib/supabaseClient";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL as string;
 
 if (!API_BASE_URL) {
   throw new Error("VITE_API_BASE_URL no está definida en el entorno.");
+}
+
+export interface RemoteNote {
+  id: string;
+  title: string;
+  contentList: string[];
 }
 
 interface NoteCreatePayload {
@@ -65,17 +71,11 @@ const fetchJson = async <T>(
   return data as T;
 };
 
-export interface RemoteNote {
-  id: string;
-  title: string;
-  contentList: string[];
-}
-
-export const getNotes = async (): Promise<RemoteNote[]> => {
+export const getNotesService = async (): Promise<RemoteNote[]> => {
   return fetchJson<RemoteNote[]>("/notes", { method: "GET" });
 };
 
-export const createNote = async <T = unknown>(
+export const createNoteService = async <T = unknown>(
   payload: NoteCreatePayload,
 ): Promise<T> => {
   return fetchJson<T>("/notes", {
@@ -84,12 +84,18 @@ export const createNote = async <T = unknown>(
   });
 };
 
-export const updateNote = async <T = unknown>(
+export const updateNoteService = async <T = unknown>(
   id: string,
   payload: NoteUpdatePayload,
 ): Promise<T> => {
   return fetchJson<T>(`/notes/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
+  });
+};
+
+export const deleteNoteService = async (id: string): Promise<void> => {
+  await fetchJson(`/notes/${id}`, {
+    method: "DELETE",
   });
 };

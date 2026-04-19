@@ -6,53 +6,41 @@ import {
   useEffect,
 } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { getNotes } from "../services/service";
+import {
+  createNoteService,
+  deleteNoteService,
+  getNotesService,
+  updateNoteService,
+} from "../services/service";
 import type { INotes } from "../types";
+import { v4 as uuidv4 } from "uuid";
 
 const STORAGE_KEY = "notes";
 
-// Cargar notas desde localStorage o usar las predeterminadas
 const loadNotesFromStorage = (): INotes[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored
-      ? JSON.parse(stored)
-      : [
-          {
-            title: "Welcome to Thinking Notes!",
-            thinkings: [
-              "This is your first note. You can edit the title and add your thoughts here.",
-              "Your notes will be saved automatically in local storage.",
-              "Feel free to add, delete, and manage your notes as you like.",
-            ],
-          },
-        ];
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error("Error cargando notas desde localStorage:", error);
-    return [
-      {
-        title: "Welcome to Thinking Notes!",
-        thinkings: [
-          "This is your first note. You can edit the title and add your thoughts here.",
-          "Your notes will be saved automatically in local storage.",
-          "Feel free to add, delete, and manage your notes as you like.",
-        ],
-      },
-    ];
+    return [];
   }
 };
 
 interface NotesContextType {
   notes: INotes[];
-  setNotes: (notes: INotes[]) => void;
   addNote: () => void;
-  deleteNote: (index: number) => void;
-  activeNoteID: number | null;
-  setActiveNote: (id: number) => void;
+  setNotes: (notes: INotes[]) => void;
+  deleteNote: (id: string) => void;
+  activeNoteState: INotes | null;
+  setActiveNote: (id: string) => void;
   getActiveNote: () => INotes | null;
-  closeNote: () => void;
-  loadingSaveLocalStorage: boolean;
+  updateActiveNote: (updates: Partial<INotes>) => void;
+  closeActiveNote: () => void;
+  loadingSaveNote: boolean;
+  setLoadingSaveNote: (value: boolean) => void;
   isLogged: boolean;
+  saveUpdatesNotesOnDBorLocalStorage: () => void;
 }
 
 export const NotesContext = createContext<NotesContextType | undefined>(
@@ -60,9 +48,9 @@ export const NotesContext = createContext<NotesContextType | undefined>(
 );
 
 export const NotesProvider = ({ children }: { children: ReactNode }) => {
-  const [notes, setNotes] = useState<INotes[]>(loadNotesFromStorage());
-  const [activeNoteID, setActiveNoteID] = useState<number | null>(null);
-  const [loadingSaveLocalStorage, setLoadingSaveLocalStorage] = useState(false);
+  const [notes, setNotes] = useState<INotes[]>([]);
+  const [activeNoteState, setActiveNoteState] = useState<INotes | null>(null);
+  const [loadingSaveNote, setLoadingSaveNote] = useState<boolean>(false);
   const [isLogged, setIsLogged] = useState(false);
 
   useEffect(() => {
@@ -94,7 +82,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadRemoteNotes = async () => {
       try {
-        const remoteNotes = await getNotes();
+        const remoteNotes = await getNotesService();
         setNotes(
           remoteNotes.map((note) => ({
             id: note.id,
@@ -109,55 +97,116 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     };
 
     if (isLogged) {
-      void loadRemoteNotes();
+      loadRemoteNotes();
     } else {
       setNotes(loadNotesFromStorage());
     }
   }, [isLogged]);
 
-  // Guardar en localStorage con debounce de 5 segundos
-  useEffect(() => {
-    // El usuario está escribiendo - marcar como "guardando"
-    setLoadingSaveLocalStorage(true);
+  const saveUpdatesNotesOnDBorLocalStorage = async () => {
+    console.log("Guardando notas...");
 
-    const timer = setTimeout(() => {
+    if (isLogged) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-        // Guardado exitoso - marcar como "guardado"
-        setLoadingSaveLocalStorage(false);
+        const response = await updateNoteService(
+          activeNoteState!.id!,
+          activeNoteState!,
+        );
+        console.log("Nota actualizada con ID:", response);
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
-        setLoadingSaveLocalStorage(false);
+      } finally {
+        setLoadingSaveNote(false);
       }
-    }, 5000);
+    } else {
+      try {
+        const newArrayNotes = notes.map((note) =>
+          note.id === activeNoteState?.id ? activeNoteState! : note,
+        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNotes));
+        setNotes(newArrayNotes);
+      } catch (error) {
+        console.error("Error guardando notas en localStorage:", error);
+      } finally {
+        setLoadingSaveNote(false);
+      }
+    }
+  };
 
-    // Limpiar el timeout si notes cambia antes de que se cumpla el delay
-    return () => clearTimeout(timer);
-  }, [notes]);
-
-  const addNote = () => {
+  const addNote = async () => {
+    console.log("Agregando nota...");
     const newNote: INotes = {
-      title: "no title",
+      title: "Nueva Nota :)",
       thinkings: [],
     };
-    setNotes([...notes, newNote]);
+
+    if (isLogged) {
+      try {
+        const response = await createNoteService({
+          title: newNote.title,
+          contentList: newNote.thinkings,
+        });
+        console.log("Nota creada con ID:", response);
+        setNotes((prevNotes) => [...prevNotes, newNote]);
+      } catch (error) {
+        console.error("Error creando nota:", error);
+      }
+    } else {
+      const newNoteWithId = { ...newNote, id: uuidv4() };
+      const newArrayNote = [...notes, newNoteWithId];
+      setNotes(newArrayNote);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));
+      } catch (error) {
+        console.error("Error guardando notas en localStorage:", error);
+      }
+      setActiveNoteState(newNoteWithId);
+    }
   };
 
-  const deleteNote = (index: number) => {
-    setNotes(notes.filter((_, i) => i !== index));
+  const deleteNote = async (id: string) => {
+    if (isLogged) {
+      try {
+        const deletedNoteIdbyAPI = await deleteNoteService(id);
+        console.log("Nota eliminada con ID:", deletedNoteIdbyAPI);
+        // todo: eliminar nota del estado después de confirmación de eliminación
+      } catch (error) {
+        console.error("Error eliminando nota:", error);
+      }
+    } else {
+      setNotes((prevNotes) => {
+        const newArrayNote = prevNotes.filter((note) => note.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));
+        return newArrayNote;
+      });
+      closeActiveNote();
+    }
   };
 
-  const setActiveNote = (id: number) => {
-    setActiveNoteID(id);
+  // Funciones para manejar la nota activa
+
+  const setActiveNote = (id: string) => {
+    const newSelectedNote = notes.find((note) => note.id === id);
+    setActiveNoteState(newSelectedNote || null);
   };
 
-  const getActiveNote = () => {
-    if (activeNoteID === null) return null;
-    return notes[activeNoteID];
+  const getActiveNote = (): INotes | null => {
+    return activeNoteState;
   };
 
-  const closeNote = () => {
-    setActiveNoteID(null);
+  const updateActiveNote = (updates: Partial<INotes>) => {
+    if (!activeNoteState?.id) return;
+    // setLoadingSaveNote(true);
+
+    setActiveNoteState((prev) => {
+      if (!prev) return prev;
+      const updatedNote = { ...prev, ...updates };
+      return updatedNote;
+    });
+  };
+
+  const closeActiveNote = () => {
+    setActiveNoteState(null);
   };
 
   return (
@@ -167,12 +216,15 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setNotes,
         addNote,
         deleteNote,
-        activeNoteID,
         setActiveNote,
         getActiveNote,
-        closeNote,
-        loadingSaveLocalStorage,
+        activeNoteState,
+        updateActiveNote,
+        closeActiveNote,
+        loadingSaveNote,
+        setLoadingSaveNote,
         isLogged,
+        saveUpdatesNotesOnDBorLocalStorage,
       }}
     >
       {children}

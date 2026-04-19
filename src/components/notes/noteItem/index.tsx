@@ -7,15 +7,17 @@ export const NoteItem = ({
   title,
   onDobleClick,
 }: {
-  id: number;
+  id: string;
   title: string;
   onDobleClick: () => void;
 }) => {
-  const { activeNoteID } = useNotes();
+  const { getActiveNote } = useNotes();
+  const activeNote = getActiveNote();
+  console.log("NOTA ACTIVA:", activeNote?.id, " NOTA ACTUAL:", id);
 
   return (
     <div
-      className={`note-item-container ${id === activeNoteID ? "active" : ""}`}
+      className={`note-item-container ${id === activeNote?.id ? "active" : ""}`}
       onClick={onDobleClick}
     >
       <p>{title}</p>

@@ -1,30 +1,17 @@
-import { useEffect, useRef } from "react";
+import type { INotes } from "@/types";
+import { useEffect, useState } from "react";
 
-/**
- * Hook que ejecuta una función después de que haya pasado un tiempo
- * sin ser llamada nuevamente (debounce)
- * @param callback - Función a ejecutar
- * @param delay - Tiempo en milisegundos antes de ejecutar
- */
-export const useDebounce = (callback: () => void, delay: number = 5000) => {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+export function useDebounce(value: INotes | null, delay: number = 5000) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
-    // Limpiar el timeout anterior
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Crear un nuevo timeout
-    timeoutRef.current = setTimeout(() => {
-      callback();
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
     }, delay);
 
-    // Cleanup
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearTimeout(handler);
     };
-  }, [callback, delay]);
-};
+  }, [value, delay]);
+
+  return debouncedValue;
+}
