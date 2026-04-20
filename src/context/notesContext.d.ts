@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import type { INotes } from "../types";
+import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
 interface NotesContextType {
     notes: INotes[];
     addNote: () => void;
@@ -12,8 +12,9 @@ interface NotesContextType {
     closeActiveNote: () => void;
     loadingSaveNote: boolean;
     setLoadingSaveNote: (value: boolean) => void;
-    isLogged: boolean;
+    isLogged: IsLoggedType;
     saveUpdatesNotesOnDBorLocalStorage: () => void;
+    waitingResponse: WaitingResponseType;
 }
 export declare const NotesContext: import("react").Context<NotesContextType | undefined>;
 export declare const NotesProvider: ({ children }: {

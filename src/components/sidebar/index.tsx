@@ -12,13 +12,20 @@ import { NoteItem } from "../notes/noteItem";
 import useAuthentication from "@/hooks/useAuthentication";
 import { supabase } from "../../../lib/supabaseClient";
 import ProfileModal from "../profile";
+import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, loading } = useAuthentication();
-  const { notes, addNote, deleteNote, setActiveNote, getActiveNote } =
-    useNotes();
+  const {
+    notes,
+    addNote,
+    deleteNote,
+    setActiveNote,
+    getActiveNote,
+    waitingResponse,
+  } = useNotes();
 
   const activeNoteID = getActiveNote()?.id || null;
   const handleSignIn = async () => {
@@ -125,6 +132,9 @@ const Sidebar = () => {
               onDobleClick={() => setActiveNote(note.id!)}
             />
           ))}
+        {!collapsed && waitingResponse === "creatingNote" && (
+          <FakeItemLoading />
+        )}
       </div>
       <ProfileModal
         isOpen={isProfileOpen}

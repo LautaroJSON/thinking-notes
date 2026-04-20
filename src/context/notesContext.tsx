@@ -12,20 +12,9 @@ import {
   getNotesService,
   updateNoteService,
 } from "../services/service";
-import type { INotes } from "../types";
+import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
 import { v4 as uuidv4 } from "uuid";
-
-const STORAGE_KEY = "notes";
-
-const loadNotesFromStorage = (): INotes[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error cargando notas desde localStorage:", error);
-    return [];
-  }
-};
+import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
 
 interface NotesContextType {
   notes: INotes[];
@@ -39,8 +28,9 @@ interface NotesContextType {
   closeActiveNote: () => void;
   loadingSaveNote: boolean;
   setLoadingSaveNote: (value: boolean) => void;
-  isLogged: boolean;
+  isLogged: IsLoggedType;
   saveUpdatesNotesOnDBorLocalStorage: () => void;
+  waitingResponse: WaitingResponseType;
 }
 
 export const NotesContext = createContext<NotesContextType | undefined>(
@@ -51,7 +41,9 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<INotes[]>([]);
   const [activeNoteState, setActiveNoteState] = useState<INotes | null>(null);
   const [loadingSaveNote, setLoadingSaveNote] = useState<boolean>(false);
-  const [isLogged, setIsLogged] = useState(false);
+  const [isLogged, setIsLogged] = useState<IsLoggedType>("loading");
+  const [waitingResponse, setWaitingResponse] =
+    useState<WaitingResponseType>("none");
 
   useEffect(() => {
     const initAuth = async () => {
@@ -59,10 +51,10 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        setIsLogged(Boolean(session));
+        setIsLogged(Boolean(session) ? "online" : "offline");
       } catch (error) {
         console.error("Error verificando sesión de usuario:", error);
-        setIsLogged(false);
+        setIsLogged("offline");
       }
     };
 
@@ -70,7 +62,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsLogged(Boolean(session));
+        setIsLogged(Boolean(session) ? "online" : "offline");
       },
     );
 
@@ -96,29 +88,40 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    if (isLogged) {
+    if (isLogged === "online") {
       loadRemoteNotes();
-    } else {
+    } else if (isLogged === "offline") {
       setNotes(loadNotesFromStorage());
     }
   }, [isLogged]);
 
   const saveUpdatesNotesOnDBorLocalStorage = async () => {
-    console.log("Guardando notas...");
-
-    if (isLogged) {
+    if (isLogged === "online") {
       try {
-        const response = await updateNoteService(
-          activeNoteState!.id!,
-          activeNoteState!,
-        );
-        console.log("Nota actualizada con ID:", response);
+        setWaitingResponse("editingNote");
+        const response = await updateNoteService(activeNoteState!.id!, {
+          title: activeNoteState!.title,
+          contentList: activeNoteState!.thinkings,
+        });
+        console.log("Nota actualizada con ID:", response.id);
+        const newArrayNotes = notes.map((note) => {
+          if (note.id === response.id) {
+            return {
+              id: response.id,
+              title: response.title,
+              thinkings: response.contentList,
+            };
+          }
+          return note;
+        });
+        setNotes(newArrayNotes);
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
       } finally {
         setLoadingSaveNote(false);
+        setWaitingResponse("none");
       }
-    } else {
+    } else if (isLogged === "offline") {
       try {
         const newArrayNotes = notes.map((note) =>
           note.id === activeNoteState?.id ? activeNoteState! : note,
@@ -134,24 +137,26 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addNote = async () => {
-    console.log("Agregando nota...");
-    const newNote: INotes = {
+    let newNote: INotes = {
       title: "Nueva Nota :)",
       thinkings: [],
     };
 
-    if (isLogged) {
+    if (isLogged === "online") {
       try {
+        setWaitingResponse("creatingNote");
         const response = await createNoteService({
           title: newNote.title,
           contentList: newNote.thinkings,
         });
-        console.log("Nota creada con ID:", response);
+        newNote.id = response.id;
         setNotes((prevNotes) => [...prevNotes, newNote]);
       } catch (error) {
         console.error("Error creando nota:", error);
+      } finally {
+        setWaitingResponse("none");
       }
-    } else {
+    } else if (isLogged === "offline") {
       const newNoteWithId = { ...newNote, id: uuidv4() };
       const newArrayNote = [...notes, newNoteWithId];
       setNotes(newArrayNote);
@@ -165,15 +170,23 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteNote = async (id: string) => {
-    if (isLogged) {
+    if (isLogged === "online") {
       try {
         const deletedNoteIdbyAPI = await deleteNoteService(id);
         console.log("Nota eliminada con ID:", deletedNoteIdbyAPI);
-        // todo: eliminar nota del estado después de confirmación de eliminación
+        // todo: agregar estado "deletingNote" para mostrar indicador de carga en la nota que se está eliminando
+        setNotes((prevNotes) => {
+          const newArrayNote = prevNotes.filter(
+            (note) => note.id !== deletedNoteIdbyAPI.id,
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));
+          return newArrayNote;
+        });
+        closeActiveNote();
       } catch (error) {
         console.error("Error eliminando nota:", error);
       }
-    } else {
+    } else if (isLogged === "offline") {
       setNotes((prevNotes) => {
         const newArrayNote = prevNotes.filter((note) => note.id !== id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));
@@ -225,6 +238,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setLoadingSaveNote,
         isLogged,
         saveUpdatesNotesOnDBorLocalStorage,
+        waitingResponse,
       }}
     >
       {children}
