@@ -14,14 +14,13 @@
 
 .note-item-container {
   display: flex;
-  /* justify-content: center; */
+  justify-content: center;
   box-sizing: border-box;
   align-items: center;
   width: 230px;
   height: 80px;
-  flex-shrink: 0;
 
-  padding: 12px 16px 12px 30px;
+  padding: 12px 16px 12px 16px;
   border-radius: 0px 12px 12px 0px;
   border-top: 1px solid #d1d1d1;
 
@@ -44,8 +43,6 @@
 
 .note-item-container:hover {
   width: 275px;
-  justify-content: center;
-  text-align: center;
   padding: 12px 16px;
 }
 
@@ -64,31 +61,29 @@
 @keyframes spawnNote {
   0% {
     width: 0px;
-    background-color: #555555; /* Color más oscuro al inicio */
+    background-color: #555555;
     opacity: 0.5;
-    transform: translateX(-10px); /* Ligero desplazamiento para dar inercia */
+    transform: translateX(-10px);
   }
   100% {
-    width: 230px; /* Tu ancho original */
-    background-color: #d1d1d1; /* El color claro que ya definiste */
+    width: 230px;
+    background-color: #d1d1d1;
     opacity: 1;
     transform: translateX(0);
   }
 }
 
 .loading {
-  /* Sobreescribimos/añadimos a tu clase existente */
   background-color: #d1d1d1;
   color: #1f1f1f;
   display: flex;
   gap: 10px;
-  /* Animación */
+
   animation: spawnNote 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 
-  /* Aseguramos que el crecimiento sea desde la izquierda */
   transform-origin: left center;
-  overflow: hidden; /* Evita que el texto se vea antes de tiempo */
-  pointer-events: none; /* No clickable mientras carga */
+  overflow: hidden;
+  pointer-events: none;
   white-space: nowrap;
 }
 
@@ -103,5 +98,5 @@
 
 .spinner-icon {
   animation: spin 1s linear infinite;
-  flex-shrink: 0; /* Para que no se aplaste si el texto es largo */
+  flex-shrink: 0;
 }

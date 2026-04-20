@@ -1,6 +1,7 @@
 import {
   CircleArrowLeft,
   CircleArrowRight,
+  Loader2,
   Plus,
   Trash2,
   User,
@@ -24,6 +25,7 @@ const Sidebar = () => {
     deleteNote,
     setActiveNote,
     getActiveNote,
+    closeActiveNote,
     waitingResponse,
   } = useNotes();
 
@@ -38,6 +40,14 @@ const Sidebar = () => {
       });
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleSecActiveNote = (noteID: string) => {
+    if (activeNoteID === noteID) {
+      closeActiveNote();
+    } else {
+      setActiveNote(noteID);
     }
   };
 
@@ -129,11 +139,16 @@ const Sidebar = () => {
               id={note.id!}
               key={note.id!}
               title={note.title}
-              onDobleClick={() => setActiveNote(note.id!)}
+              onDobleClick={() => handleSecActiveNote(note.id!)}
             />
           ))}
         {!collapsed && waitingResponse === "creatingNote" && (
           <FakeItemLoading />
+        )}
+        {!collapsed && waitingResponse === "gettingNotes" && (
+          <div className="sidebar-getting-notes-container ">
+            <Loader2 size={32} className="spinner-icon" />
+          </div>
         )}
       </div>
       <ProfileModal

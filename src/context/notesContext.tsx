@@ -73,6 +73,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const loadRemoteNotes = async () => {
+      setWaitingResponse("gettingNotes");
       try {
         const remoteNotes = await getNotesService();
         setNotes(
@@ -85,6 +86,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error("Error cargando notas remotas:", error);
         setNotes(loadNotesFromStorage());
+      } finally {
+        setWaitingResponse("none");
       }
     };
 
