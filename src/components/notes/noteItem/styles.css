@@ -61,7 +61,47 @@
   left: 10px;
 }
 
+@keyframes spawnNote {
+  0% {
+    width: 0px;
+    background-color: #555555; /* Color más oscuro al inicio */
+    opacity: 0.5;
+    transform: translateX(-10px); /* Ligero desplazamiento para dar inercia */
+  }
+  100% {
+    width: 230px; /* Tu ancho original */
+    background-color: #d1d1d1; /* El color claro que ya definiste */
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .loading {
+  /* Sobreescribimos/añadimos a tu clase existente */
   background-color: #d1d1d1;
   color: #1f1f1f;
+  display: flex;
+  gap: 10px;
+  /* Animación */
+  animation: spawnNote 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+
+  /* Aseguramos que el crecimiento sea desde la izquierda */
+  transform-origin: left center;
+  overflow: hidden; /* Evita que el texto se vea antes de tiempo */
+  pointer-events: none; /* No clickable mientras carga */
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-icon {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0; /* Para que no se aplaste si el texto es largo */
 }

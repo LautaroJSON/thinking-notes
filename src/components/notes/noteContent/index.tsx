@@ -4,11 +4,13 @@ import NoActiveNote from "./components/noActiveNote";
 import "./styles.css";
 
 const NoteContent = () => {
-  const ActiveNote = useNotes().getActiveNote();
-
+  const { activeNoteState, waitingResponse } = useNotes();
+  console.log("estado de espera en NoteContent:", waitingResponse);
   return (
-    <div className="note-c-container">
-      {ActiveNote ? <ActiveNoteView /> : <NoActiveNote />}
+    <div
+      className={`note-c-container ${waitingResponse === "deletingNote" ? "note-deleting" : ""}`}
+    >
+      {activeNoteState ? <ActiveNoteView /> : <NoActiveNote />}
     </div>
   );
 };
