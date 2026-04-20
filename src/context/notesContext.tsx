@@ -151,6 +151,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         });
         newNote.id = response.id;
         setNotes((prevNotes) => [...prevNotes, newNote]);
+        setActiveNoteState(newNote);
       } catch (error) {
         console.error("Error creando nota:", error);
       } finally {
@@ -172,8 +173,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const deleteNote = async (id: string) => {
     if (isLogged === "online") {
       try {
+        setWaitingResponse("deletingNote");
         const deletedNoteIdbyAPI = await deleteNoteService(id);
-        console.log("Nota eliminada con ID:", deletedNoteIdbyAPI);
         // todo: agregar estado "deletingNote" para mostrar indicador de carga en la nota que se está eliminando
         setNotes((prevNotes) => {
           const newArrayNote = prevNotes.filter(
@@ -185,6 +186,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         closeActiveNote();
       } catch (error) {
         console.error("Error eliminando nota:", error);
+      } finally {
+        setWaitingResponse("none");
       }
     } else if (isLogged === "offline") {
       setNotes((prevNotes) => {

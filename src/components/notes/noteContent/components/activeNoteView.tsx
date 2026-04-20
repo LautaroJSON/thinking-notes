@@ -55,7 +55,9 @@ const ActiveNoteView = () => {
   };
 
   return (
-    <>
+    <div
+    // className={`${waitingResponse === "deletingNote" ? "note-deleting" : ""}`}
+    >
       <div className="title">
         <input
           type="text"
@@ -148,7 +150,7 @@ const ActiveNoteView = () => {
           className="thinking-input"
         />
       </div>
-    </>
+    </div>
   );
 };
 
