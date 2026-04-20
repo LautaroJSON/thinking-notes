@@ -12,6 +12,15 @@ export interface RemoteNote {
   contentList: string[];
 }
 
+export interface NoteResponse {
+  id: string;
+  userId: string;
+  title: string;
+  contentList: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface NoteCreatePayload {
   title: string;
   contentList: string[];
@@ -75,27 +84,29 @@ export const getNotesService = async (): Promise<RemoteNote[]> => {
   return fetchJson<RemoteNote[]>("/notes", { method: "GET" });
 };
 
-export const createNoteService = async <T = unknown>(
+export const createNoteService = async (
   payload: NoteCreatePayload,
-): Promise<T> => {
-  return fetchJson<T>("/notes", {
+): Promise<NoteResponse> => {
+  return fetchJson<NoteResponse>("/notes", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 };
 
-export const updateNoteService = async <T = unknown>(
+export const updateNoteService = async (
   id: string,
   payload: NoteUpdatePayload,
-): Promise<T> => {
-  return fetchJson<T>(`/notes/${id}`, {
+): Promise<NoteResponse> => {
+  return fetchJson<NoteResponse>(`/notes/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 };
 
-export const deleteNoteService = async (id: string): Promise<void> => {
-  await fetchJson(`/notes/${id}`, {
+export const deleteNoteService = async (
+  id: string,
+): Promise<{ id: string }> => {
+  return fetchJson<{ id: string }>(`/notes/${id}`, {
     method: "DELETE",
   });
 };

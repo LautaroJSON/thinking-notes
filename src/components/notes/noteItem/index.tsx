@@ -13,7 +13,6 @@ export const NoteItem = ({
 }) => {
   const { getActiveNote } = useNotes();
   const activeNote = getActiveNote();
-  console.log("NOTA ACTIVA:", activeNote?.id, " NOTA ACTUAL:", id);
 
   return (
     <div

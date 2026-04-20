@@ -3,6 +3,14 @@ export interface RemoteNote {
     title: string;
     contentList: string[];
 }
+export interface NoteResponse {
+    id: string;
+    userId: string;
+    title: string;
+    contentList: any[];
+    createdAt: string;
+    updatedAt: string;
+}
 interface NoteCreatePayload {
     title: string;
     contentList: string[];
@@ -12,7 +20,9 @@ interface NoteUpdatePayload {
     contentList?: string[];
 }
 export declare const getNotesService: () => Promise<RemoteNote[]>;
-export declare const createNoteService: <T = unknown>(payload: NoteCreatePayload) => Promise<T>;
-export declare const updateNoteService: <T = unknown>(id: string, payload: NoteUpdatePayload) => Promise<T>;
-export declare const deleteNoteService: (id: string) => Promise<void>;
+export declare const createNoteService: (payload: NoteCreatePayload) => Promise<NoteResponse>;
+export declare const updateNoteService: (id: string, payload: NoteUpdatePayload) => Promise<NoteResponse>;
+export declare const deleteNoteService: (id: string) => Promise<{
+    id: string;
+}>;
 export {};

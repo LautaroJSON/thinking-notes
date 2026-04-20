@@ -60,3 +60,8 @@
   top: 10px;
   left: 10px;
 }
+
+.loading {
+  background-color: #d1d1d1;
+  color: #1f1f1f;
+}
