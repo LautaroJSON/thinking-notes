@@ -25,14 +25,7 @@ const ActiveNoteView = () => {
     }
   }, [debouncedActiveNote]);
 
-  // useEffect(() => {
-  //   if (activeNoteState) {
-  //     setEditedNote(activeNoteState);
-  //   }
-  // }, [activeNoteState?.thinkings.length]);
-
   const handleUpdateActiveNote = (updates: Partial<INotes>) => {
-    console.log("Actualizando nota con cambios:", updates.title);
     setLoadingSaveNote(true);
     setEditedNote({ ...ActiveNote, ...updates } as INotes);
     updateActiveNote({ ...ActiveNote, ...updates });
@@ -41,7 +34,6 @@ const ActiveNoteView = () => {
   const handleNewThinking = (newThinking: string) => {
     setLoadingSaveNote(true);
     const updatedThinkings = [...(ActiveNote?.thinkings || []), newThinking];
-    console.log("Agregando nuevo pensamiento:", updatedThinkings);
     setEditedNote({ ...ActiveNote, thinkings: updatedThinkings } as INotes);
     updateActiveNote({ thinkings: updatedThinkings });
   };
@@ -55,9 +47,7 @@ const ActiveNoteView = () => {
   };
 
   return (
-    <div
-    // className={`${waitingResponse === "deletingNote" ? "note-deleting" : ""}`}
-    >
+    <div>
       <div className="title">
         <input
           type="text"

@@ -105,15 +105,16 @@
 }
 
 .sidebar-notes-list {
-  /* background-color: aqua; */
   display: flex;
   flex-direction: column;
+  /* justify-content: center; */
   gap: 12px;
   padding: 12px 0px;
 
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  height: 100%;
 }
 
 .sidebar-user-info {
@@ -145,4 +146,46 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-icon {
+  animation: spin 1s linear infinite;
+  color: #8b8b8bd3;
+}
+
+@keyframes spawn-getting-notes-container {
+  0% {
+    transform: scaleY(0.1); /* Empieza casi invisible */
+    /* opacity: 0; */
+  }
+  60% {
+    transform: scaleY(1.05); /* Se pasa un poquito (primer rebote) */
+    /* opacity: 1; */
+  }
+  80% {
+    transform: scaleY(0.97); /* Se encoge un poquito */
+  }
+  100% {
+    transform: scaleY(1); /* Tamaño final perfecto */
+  }
+}
+
+.sidebar-getting-notes-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: rgba(66, 66, 66, 0.219);
+  margin: 12px;
+  border-radius: 12px;
+  animation: spawn-getting-notes-container 0.6s ease-out forwards;
 }

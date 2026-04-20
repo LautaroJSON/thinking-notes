@@ -7,6 +7,7 @@ export interface INotes {
 export type IsLoggedType = "online" | "offline" | "loading";
 
 export type WaitingResponseType =
+  | "gettingNotes"
   | "creatingNote"
   | "deletingNote"
   | "editingNote"

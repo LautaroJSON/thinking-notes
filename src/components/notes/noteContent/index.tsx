@@ -5,7 +5,7 @@ import "./styles.css";
 
 const NoteContent = () => {
   const { activeNoteState, waitingResponse } = useNotes();
-  console.log("estado de espera en NoteContent:", waitingResponse);
+
   return (
     <div
       className={`note-c-container ${waitingResponse === "deletingNote" ? "note-deleting" : ""}`}

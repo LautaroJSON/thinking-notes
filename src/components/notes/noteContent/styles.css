@@ -87,7 +87,7 @@
   gap: 12px;
 
   overflow-y: auto;
-  height: calc(100vh - 60px);
+  height: 100%;
 }
 
 .thinking-item {
@@ -97,61 +97,51 @@
 }
 
 .thinking-input {
-  /* Reset de estilos base */
   width: 100%;
   min-height: 120px;
   padding: 12px 16px;
   box-sizing: border-box;
 
-  /* Tipografía */
   font-size: 1rem;
   line-height: 1.5;
-  color: #334155; /* Un gris pizarra oscuro profesional */
+  color: #334155;
 
-  /* Estética de la caja */
   background-color: #ffffff;
-  border: 2px solid #e2e8f0; /* Borde suave */
-  border-radius: 12px; /* Bordes bien redondeados */
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-  /* Comportamiento */
-  resize: vertical; /* Solo permitir redimensionar hacia abajo */
+  resize: vertical;
   outline: none;
-  transition: border 0.2s ease; /* Animación suave para el focus */
+  transition: border 0.2s ease;
 }
 
 .thinking-input-edit {
-  /* Reset de estilos base */
   width: 100%;
   min-height: 120px;
   padding: 12px 16px;
   box-sizing: border-box;
 
-  /* Tipografía */
   font-size: 1rem;
   line-height: 1.5;
-  color: #334155; /* Un gris pizarra oscuro profesional */
+  color: #334155;
 
-  /* Estética de la caja */
   background-color: #ffffff;
-  border: 2px solid #e2e8f0; /* Borde suave */
-  border-radius: 12px; /* Bordes bien redondeados */
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-  /* Comportamiento */
-  resize: vertical; /* Solo permitir redimensionar hacia abajo */
+  resize: vertical;
   outline: none;
-  transition: border 0.2s ease; /* Animación suave para el focus */
+  transition: border 0.2s ease;
 }
 
-/* Estado al hacer click (Focus) */
 .thinking-input:focus {
-  border-color: var(--primary-color); /* Azul vibrante */
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); /* Efecto de halo sutil */
-  background-color: #f8fafc; /* Cambio de fondo casi imperceptible */
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  background-color: #f8fafc;
 }
 
-/* Estilo para el placeholder */
 .thinking-input::placeholder {
   color: #94a3b8;
   font-style: italic;
@@ -167,7 +157,7 @@
 }
 
 .thinking-text-container:hover {
-  background-color: #f1f5f9; /* Un gris muy suave al hacer hover */
+  background-color: #f1f5f9;
 }
 
 .thinking-text {
@@ -279,10 +269,10 @@
 
 .note-deleting {
   position: relative;
-  overflow: hidden; /* Importante para que el eclipse no se salga */
-  pointer-events: none; /* Evita que el usuario toque la nota mientras se borra */
+  overflow: hidden;
+  pointer-events: none;
   transition: transform 0.5s ease;
-  transform: scale(0.98); /* Un pequeño efecto de encogimiento */
+  transform: scale(0.98);
 }
 
 .note-deleting::after {
