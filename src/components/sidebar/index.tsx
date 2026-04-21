@@ -56,13 +56,19 @@ const Sidebar = () => {
       <div className="sidebar-options">
         {collapsed ? (
           <div className="sidebar-collapsed-content">
-            <div className="sidebar-avatar-only">
-              <img
-                src={user?.user_metadata?.picture || "/default-avatar.png"}
-                alt="Profile"
-                className="sidebar-user-avatar"
-              />
-            </div>
+            {user ? (
+              <div className="sidebar-avatar-only">
+                <img
+                  src={user?.user_metadata?.picture || "/default-avatar.png"}
+                  alt="Profile"
+                  className="sidebar-user-avatar"
+                />
+              </div>
+            ) : (
+              <div className="sidebar-user-info" onClick={handleSignIn}>
+                <User size={20} />
+              </div>
+            )}
             <button
               className="circular-button"
               onClick={() => setCollapsed(false)}
