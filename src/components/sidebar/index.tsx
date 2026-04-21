@@ -51,6 +51,11 @@ const Sidebar = () => {
     }
   };
 
+  const handleOnCloseeProfile = () => {
+    setIsProfileOpen(false);
+    closeActiveNote();
+  };
+
   return (
     <aside className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-options">
@@ -157,10 +162,7 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-      />
+      <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />
     </aside>
   );
 };
