@@ -7,6 +7,8 @@
   width: 100%;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   background-color: white;
+
+  overflow: hidden;
 }
 
 .note-c-container::after {
@@ -78,16 +80,13 @@
 }
 
 .thinking-list {
-  background-color: white;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
 
   padding: 20px;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  overflow-y: auto;
-  height: 100%;
 }
 
 .thinking-item {
@@ -284,4 +283,10 @@
   height: 100%;
   animation: eclipse-fade 1s forwards ease-in-out;
   z-index: 10;
+}
+
+.thinkings-container {
+  /* max-height: 100%; */
+  flex-grow: 1;
+  overflow-y: auto;
 }

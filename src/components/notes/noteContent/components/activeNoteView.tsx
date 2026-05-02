@@ -47,7 +47,7 @@ const ActiveNoteView = () => {
   };
 
   return (
-    <div>
+    <>
       <div className="title">
         <input
           type="text"
@@ -65,68 +65,70 @@ const ActiveNoteView = () => {
         </div>
       </div>
       <div className="thinking-list">
-        {ActiveNote?.thinkings.map((thinking, index) => (
-          <div
-            key={index}
-            onMouseEnter={() => setIsHoveredID(index)}
-            onMouseLeave={() => setIsHoveredID(-1)}
-            className="thinking-text-container"
-          >
-            {isEditingID === index ? (
-              <textarea
-                className="thinking-input"
-                defaultValue={thinking}
-                autoFocus
-                ref={(el) => {
-                  if (el) {
-                    const length = el.value.length;
-                    el.setSelectionRange(length, length);
-                  }
-                }}
-                onBlur={(e) => {
-                  handleUpdateActiveNote({
-                    thinkings:
-                      ActiveNote?.thinkings.map((t, i) =>
-                        i === index ? e.target.value : t,
-                      ) || [],
-                  });
-                  setIsEditingID(-1);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    e.currentTarget.blur();
-                  }
-                }}
-              />
-            ) : (
-              <span key={index} className="thinking-text">
-                {thinking}
-              </span>
-            )}
-            {isHoveredID === index && (
-              <div className="thinking-actions">
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setIsEditingID((prev) => (prev === index ? -1 : index));
+        <div className="thinkings-container">
+          {ActiveNote?.thinkings.map((thinking, index) => (
+            <div
+              key={index}
+              onMouseEnter={() => setIsHoveredID(index)}
+              onMouseLeave={() => setIsHoveredID(-1)}
+              className="thinking-text-container"
+            >
+              {isEditingID === index ? (
+                <textarea
+                  className="thinking-input"
+                  defaultValue={thinking}
+                  autoFocus
+                  ref={(el) => {
+                    if (el) {
+                      const length = el.value.length;
+                      el.setSelectionRange(length, length);
+                    }
                   }}
-                  className="action-btn edit"
-                  title="Editar"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDeleteThinking(index)}
-                  className="action-btn delete"
-                  title="Borrar"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                  onBlur={(e) => {
+                    handleUpdateActiveNote({
+                      thinkings:
+                        ActiveNote?.thinkings.map((t, i) =>
+                          i === index ? e.target.value : t,
+                        ) || [],
+                    });
+                    setIsEditingID(-1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      e.currentTarget.blur();
+                    }
+                  }}
+                />
+              ) : (
+                <span key={index} className="thinking-text">
+                  {thinking}
+                </span>
+              )}
+              {isHoveredID === index && (
+                <div className="thinking-actions">
+                  <button
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsEditingID((prev) => (prev === index ? -1 : index));
+                    }}
+                    className="action-btn edit"
+                    title="Editar"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteThinking(index)}
+                    className="action-btn delete"
+                    title="Borrar"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
         <textarea
           ref={textAreaRef}
           onKeyDown={(e) => {
@@ -140,7 +142,7 @@ const ActiveNoteView = () => {
           className="thinking-input"
         />
       </div>
-    </div>
+    </>
   );
 };
 
