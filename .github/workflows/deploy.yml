@@ -30,6 +30,7 @@ jobs:
       - name: Install and Build
         run: |
           npm ci
+          npm test
           npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
