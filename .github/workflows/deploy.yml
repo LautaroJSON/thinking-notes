@@ -3,25 +3,54 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main] # Se ejecuta cada vez que subes algo a main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
       - name: Install and Build
         run: |
-          npm install
+          npm ci
           npm run build
         env:
-          # Aquí mapeas el secreto de GitHub a la variable que usa tu código
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: dist # La carpeta que genera Vite
-          branch: gh-pages # La rama donde se sube el resultado
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
