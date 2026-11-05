@@ -27,6 +27,7 @@ vi.mock("../services/service", () => ({
   createNoteService: vi.fn(),
   updateNoteService: vi.fn(),
   deleteNoteService: vi.fn(),
+  reorderNotesService: vi.fn(),
 }));
 
 import * as service from "../services/service";
@@ -212,6 +213,193 @@ describe("NotesProvider", () => {
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)[0].title).toBe(
         "Ide",
       );
+    });
+  });
+
+  describe("reorderNotes", () => {
+    const LOCAL_NOTES = ["A", "B", "C"].map((id) => ({
+      id,
+      title: id,
+      thinkings: [],
+    }));
+    const REMOTE_NOTES = ["A", "B", "C"].map((id) => ({
+      id,
+      title: id,
+      contentList: [],
+    }));
+    const ids = (notes: { id?: string }[]) => notes.map((n) => n.id);
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <NotesProvider>{children}</NotesProvider>
+    );
+    const renderNotes = async () => {
+      const hook = renderHook(() => useNotes(), { wrapper });
+      await flush();
+      return hook;
+    };
+
+    const deferred = <T,>() => {
+      let resolve!: (value: T) => void;
+      let reject!: (reason: unknown) => void;
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+
+    beforeEach(() => {
+      vi.mocked(service.reorderNotesService).mockReset();
+      vi.mocked(service.updateNoteService).mockReset();
+    });
+
+    describe("offline", () => {
+      beforeEach(() => {
+        mockSession(false);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_NOTES));
+      });
+
+      it("reordena las notas y guarda el orden en localStorage", async () => {
+        const { result, unmount } = await renderNotes();
+
+        await act(() => result.current.reorderNotes("C", "A"));
+
+        expect(ids(result.current.notes)).toEqual(["C", "A", "B"]);
+        expect(ids(JSON.parse(localStorage.getItem(STORAGE_KEY)!))).toEqual([
+          "C",
+          "A",
+          "B",
+        ]);
+        expect(service.reorderNotesService).not.toHaveBeenCalled();
+
+        // Al volver a abrir la app se carga en el orden guardado
+        unmount();
+        const { result: reloaded } = await renderNotes();
+        expect(ids(reloaded.current.notes)).toEqual(["C", "A", "B"]);
+      });
+
+      it("no guarda nada si se suelta en la misma posición", async () => {
+        const { result } = await renderNotes();
+        const before = result.current.notes;
+        const setItem = vi.spyOn(Storage.prototype, "setItem");
+
+        await act(() => result.current.reorderNotes("B", "B"));
+
+        expect(result.current.notes).toBe(before);
+        expect(setItem).not.toHaveBeenCalled();
+      });
+
+      it("mantiene abierta la nota activa después de reordenar", async () => {
+        const { result } = await renderNotes();
+        act(() => result.current.setActiveNote("A"));
+
+        await act(() => result.current.reorderNotes("A", "C"));
+
+        expect(ids(result.current.notes)).toEqual(["B", "C", "A"]);
+        expect(result.current.activeNoteState?.id).toBe("A");
+      });
+
+      it("si falla localStorage vuelve al orden anterior y avisa", async () => {
+        const { result } = await renderNotes();
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+          throw new Error("cuota excedida");
+        });
+
+        await act(() => result.current.reorderNotes("C", "A"));
+
+        expect(ids(result.current.notes)).toEqual(["A", "B", "C"]);
+        expect(result.current.reorderError).toBeTruthy();
+
+        act(() => result.current.clearReorderError());
+        expect(result.current.reorderError).toBeNull();
+      });
+    });
+
+    describe("online", () => {
+      beforeEach(() => {
+        mockSession(true);
+        vi.mocked(service.getNotesService).mockResolvedValue(REMOTE_NOTES);
+      });
+
+      it("guarda el orden en la API mostrando el estado de carga", async () => {
+        const { result } = await renderNotes();
+        const request = deferred<{ ids: string[] }>();
+        vi.mocked(service.reorderNotesService).mockReturnValue(
+          request.promise,
+        );
+
+        let pending!: Promise<void>;
+        act(() => {
+          pending = result.current.reorderNotes("C", "A");
+        });
+
+        expect(ids(result.current.notes)).toEqual(["C", "A", "B"]);
+        expect(result.current.waitingResponse).toBe("reorderingNotes");
+        expect(service.reorderNotesService).toHaveBeenCalledWith([
+          "C",
+          "A",
+          "B",
+        ]);
+
+        await act(async () => {
+          request.resolve({ ids: ["C", "A", "B"] });
+          await pending;
+        });
+
+        expect(result.current.waitingResponse).toBe("none");
+        expect(result.current.reorderError).toBeNull();
+        expect(ids(result.current.notes)).toEqual(["C", "A", "B"]);
+      });
+
+      it("si la API falla vuelve al orden anterior y avisa", async () => {
+        const { result } = await renderNotes();
+        vi.mocked(service.reorderNotesService).mockRejectedValue(
+          new Error("500"),
+        );
+
+        await act(() => result.current.reorderNotes("C", "A"));
+
+        expect(ids(result.current.notes)).toEqual(["A", "B", "C"]);
+        expect(result.current.reorderError).toBeTruthy();
+        expect(result.current.waitingResponse).toBe("none");
+      });
+
+      it("un guardado de nota en vuelo no pisa el nuevo orden", async () => {
+        const { result } = await renderNotes();
+        const update = deferred<Awaited<
+          ReturnType<typeof service.updateNoteService>
+        >>();
+        vi.mocked(service.updateNoteService).mockReturnValue(update.promise);
+        vi.mocked(service.reorderNotesService).mockResolvedValue({
+          ids: ["C", "A", "B"],
+        });
+
+        act(() => result.current.setActiveNote("A"));
+        act(() => result.current.updateActiveNote({ title: "A editada" }));
+
+        let saving!: Promise<void> | void;
+        act(() => {
+          saving = result.current.saveUpdatesNotesOnDBorLocalStorage();
+        });
+
+        // Mientras el guardado está en vuelo, el orden cambia
+        await act(() => result.current.reorderNotes("C", "A"));
+
+        await act(async () => {
+          update.resolve({
+            id: "A",
+            userId: "u1",
+            title: "A editada",
+            contentList: [],
+            createdAt: "",
+            updatedAt: "",
+          });
+          await saving;
+        });
+
+        expect(ids(result.current.notes)).toEqual(["C", "A", "B"]);
+        expect(result.current.notes[1].title).toBe("A editada");
+      });
     });
   });
 });

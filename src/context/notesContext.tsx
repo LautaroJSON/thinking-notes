@@ -11,12 +11,14 @@ import {
   createNoteService,
   deleteNoteService,
   getNotesService,
+  reorderNotesService,
   updateNoteService,
 } from "../services/service";
 import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
 import { clearDraft } from "@/components/utils/drafts";
+import { applyOrder, moveNote } from "@/components/utils/reorder";
 import { NotesContext } from "./notes-context";
 
 export const NotesProvider = ({ children }: { children: ReactNode }) => {
@@ -26,6 +28,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [isLogged, setIsLogged] = useState<IsLoggedType>("loading");
   const [waitingResponse, setWaitingResponse] =
     useState<WaitingResponseType>("none");
+  const [reorderError, setReorderError] = useState<string | null>(null);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -101,17 +104,20 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
           contentList: activeNoteState!.thinkings,
         });
         console.log("Nota actualizada con ID:", response.id);
-        const newArrayNotes = notes.map((note) => {
-          if (note.id === response.id) {
-            return {
-              id: response.id,
-              title: response.title,
-              thinkings: response.contentList,
-            };
-          }
-          return note;
-        });
-        setNotes(newArrayNotes);
+        // Forma funcional: mientras esperábamos la respuesta, `notes` pudo
+        // cambiar (por ejemplo, el usuario reordenó). Partir del snapshot
+        // tomado antes del await pisaría esos cambios.
+        setNotes((prevNotes) =>
+          prevNotes.map((note) =>
+            note.id === response.id
+              ? {
+                  id: response.id,
+                  title: response.title,
+                  thinkings: response.contentList,
+                }
+              : note,
+          ),
+        );
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
       } finally {
@@ -198,6 +204,50 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const REORDER_ERROR_MESSAGE = "No se pudo guardar el orden de las notas.";
+
+  const reorderNotes = async (activeId: string, overId: string) => {
+    const nextNotes = moveNote(notes, activeId, overId);
+    // Soltar en la misma posición (o ids inexistentes): nada que guardar
+    if (nextNotes === notes) return;
+
+    const previousOrder = notes.map((note) => note.id!);
+    // Ante un error se vuelve al orden anterior sin descartar cambios de
+    // contenido que hayan llegado mientras tanto.
+    const revertOrder = () =>
+      setNotes((prevNotes) => applyOrder(prevNotes, previousOrder));
+
+    setReorderError(null);
+    setNotes(nextNotes);
+
+    if (isLogged === "online") {
+      setWaitingResponse("reorderingNotes");
+      try {
+        await reorderNotesService(nextNotes.map((note) => note.id!));
+      } catch (error) {
+        console.error("Error guardando el orden de las notas:", error);
+        revertOrder();
+        setReorderError(REORDER_ERROR_MESSAGE);
+      } finally {
+        setWaitingResponse("none");
+      }
+    } else if (isLogged === "offline") {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes));
+      } catch (error) {
+        console.error("Error guardando el orden en localStorage:", error);
+        revertOrder();
+        setReorderError(REORDER_ERROR_MESSAGE);
+      }
+    }
+  };
+
+  // Identidad estable: el sidebar la usa como dependencia de un efecto que
+  // oculta el aviso; si cambiara en cada render, el temporizador se reiniciaría.
+  const clearReorderError = useCallback(() => {
+    setReorderError(null);
+  }, []);
+
   // Funciones para manejar la nota activa
 
   const setActiveNote = (id: string) => {
@@ -241,6 +291,9 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         isLogged,
         saveUpdatesNotesOnDBorLocalStorage,
         waitingResponse,
+        reorderNotes,
+        reorderError,
+        clearReorderError,
       }}
     >
       {children}
