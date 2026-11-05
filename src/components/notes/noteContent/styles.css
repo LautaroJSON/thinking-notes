@@ -25,23 +25,54 @@
   z-index: 5;
 }
 
-.title {
-  width: 100%;
-  height: 90px;
-  box-sizing: border-box;
-  border-bottom: 1px solid #c9c9c9;
+/* Barra de herramientas: estado de guardado a la izquierda, acciones a la derecha */
+.note-toolbar {
   display: flex;
   align-items: center;
-  padding: 20px;
-  font-size: 5rem;
-  font-weight: 300;
+  justify-content: space-between;
   gap: 12px;
+  min-height: 44px;
+  padding: 0 12px 0 20px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #eef2f6;
+  background-color: #fafbfc;
+  flex-shrink: 0;
 }
 
-.save-indicator {
+.save-status {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* En la barra, los botones son "fantasma": sin borde hasta el hover */
+.note-toolbar .action-btn {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding: 6px;
+}
+
+.note-toolbar .action-btn:hover,
+.note-toolbar .action-btn[aria-expanded="true"],
+.note-toolbar .action-btn[aria-pressed="true"] {
+  transform: none;
+  background-color: #eef1ff;
+  border-color: transparent;
+  color: var(--primary-color);
+}
+
+.note-toolbar .copy-btn.is-copied {
+  background-color: #ecfdf5;
+  color: #16a34a;
+}
+
+/* Título como parte del contenido, alineado con las ideas */
+.note-heading {
+  padding: 24px 20px 0;
   flex-shrink: 0;
 }
 
@@ -65,18 +96,21 @@
 
 .title-input {
   width: 100%;
-  height: 100%;
-  font-size: x-large;
+  padding: 0;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1e293b;
   border: none;
   outline: none;
   background-color: transparent;
-  font-weight: 500;
   font-family: inherit;
-  text-indent: 50px;
+  text-overflow: ellipsis;
 }
 
 .title-input::placeholder {
-  color: #ccc;
+  color: #cbd5e1;
 }
 
 .thinking-list {
@@ -135,24 +169,107 @@
   transition: border 0.2s ease;
 }
 
-/* Campo de nueva idea + botón de dictado */
-.new-thinking-wrapper {
-  position: relative;
-  width: 100%;
+/* Campo de nueva idea: recuadro redondeado que crece con el texto */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 6px 6px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  cursor: text;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.new-thinking-wrapper .thinking-input {
-  display: block;
-  padding-right: 56px;
+.composer:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(120, 144, 255, 0.15);
 }
 
-.dictation-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 36px;
-  height: 36px;
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  /* Altura de una línea; JS la ajusta al contenido hasta max-height */
+  min-height: 24px;
+  max-height: 50vh;
+  margin: 0 0 5px;
+  padding: 0;
+  overflow-y: auto;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.composer-input::placeholder {
+  color: #94a3b8;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.composer-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
   border-radius: 50%;
+  background-color: var(--primary-color);
+  color: #ffffff;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.composer-send.is-empty {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.composer-hint {
+  flex-shrink: 0;
+  margin: 12px 0 6px 16px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* En pantallas táctiles el botón de enviar ya es la forma de agregar */
+@media (pointer: coarse) {
+  .composer-hint {
+    display: none;
+  }
+
+  .composer {
+    margin-top: 12px;
+  }
+}
+
+/* Más específico que .action-btn (definido más abajo) para quitarle el recuadro */
+.composer .dictation-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 
   /* Mantener presionado no debe abrir menús, seleccionar ni hacer zoom */
   touch-action: none;
@@ -163,9 +280,14 @@
 }
 
 @media (pointer: coarse) {
-  .dictation-btn {
-    width: 44px;
-    height: 44px;
+  .composer .dictation-btn,
+  .composer-send {
+    width: 40px;
+    height: 40px;
+  }
+
+  .composer-input {
+    margin-bottom: 8px;
   }
 }
 
@@ -189,12 +311,13 @@
   }
 }
 
-.dictation-btn:hover {
+.composer .dictation-btn:hover {
+  transform: none;
   color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #eef1ff;
 }
 
-.dictation-btn.is-listening {
+.composer .dictation-btn.is-listening {
   color: #ffffff;
   background-color: var(--primary-color);
   border-color: var(--primary-color);
@@ -230,7 +353,8 @@
 .thinking-text-container {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
   padding: 8px 12px;
   transition: background-color 0.2s ease;
   border-left: 2px solid var(--primary-color);
@@ -250,19 +374,65 @@
   border: none;
   outline: none;
   background-color: transparent;
-  height: 100%;
-  resize: vertical;
-  overflow: hidden;
+  min-width: 0;
   box-sizing: border-box;
 }
 
+/* Acciones de cada idea: van al costado del texto (no encima) y aparecen al hover */
 .thinking-actions {
+  position: relative;
   display: flex;
-  gap: 4px;
-  margin-left: 12px;
+  align-items: flex-start;
+  /* Ocupa todo el alto de la idea para que la línea separadora acompañe */
+  align-self: stretch;
+  gap: 2px;
+  flex-shrink: 0;
+  margin: -3px -6px -3px 0;
+  padding-left: 8px;
+  opacity: 0;
+  /* Invisibles = no clickeables: evita borrar sin querer en pantallas táctiles */
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+/* Línea separadora entre el texto y las acciones (85% del alto, gris suave) */
+.thinking-actions::before {
+  content: "";
   position: absolute;
-  top: 4px;
-  right: 10px;
+  left: 0;
+  top: 7.5%;
+  width: 1px;
+  height: 85%;
+  background-color: rgba(51, 65, 85, 0.22);
+}
+
+.thinking-text-container:hover .thinking-actions,
+.thinking-actions:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.thinking-actions .action-btn {
+  padding: 5px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.thinking-actions .action-btn:hover {
+  transform: none;
+  background-color: #eef1ff;
+  border-color: transparent;
+  color: var(--primary-color);
+}
+
+.thinking-actions .action-btn.delete:hover {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+.thinking-actions .copy-btn.is-copied {
+  color: #16a34a;
 }
 
 .action-btn {
@@ -330,8 +500,18 @@
     height: 100vh;
   }
 
+  /* El botón flotante del sidebar ocupa la esquina superior izquierda */
+  .note-toolbar {
+    min-height: 56px;
+    padding-left: 76px;
+  }
+
+  .note-heading {
+    padding-top: 28px;
+  }
+
   .title-input {
-    text-align: center;
+    font-size: 1.5rem;
   }
 
   /* Deja lugar para el número de versión debajo del cuadro de texto */
@@ -381,8 +561,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 6px 12px 6px 20px;
+  border-bottom: 1px solid #eef2f6;
 }
 
 .search-input {
@@ -412,7 +592,7 @@
 .title-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
 }
 
 /* Botón de copiar (nota o idea) */

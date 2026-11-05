@@ -61,10 +61,14 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
         aria-expanded={isOpen}
         aria-controls={menuId}
       >
-        <Download size={18} />
+        <Download size={17} />
       </button>
       {isOpen && (
-        <div id={menuId} role="menu" className="note-info-popover download-menu">
+        <div
+          id={menuId}
+          role="menu"
+          className="note-info-popover download-menu"
+        >
           <button type="button" role="menuitem" onClick={handleMarkdown}>
             <FileText size={16} />
             Descargar .md (Markdown)

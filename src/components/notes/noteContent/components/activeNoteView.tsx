@@ -1,7 +1,21 @@
 import { useNotes } from "@/hooks/useNotes";
 import type { INotes } from "@/types";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { LoaderCircle, Check, Pencil, Trash2, Search, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  ArrowUp,
+  LoaderCircle,
+  Check,
+  Pencil,
+  Trash2,
+  Search,
+  X,
+} from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
 import type { Segment } from "@/hooks/useNoteSearch";
@@ -33,6 +47,9 @@ const HighlightedText = ({ segments }: { segments: Segment[] }) => (
   </>
 );
 
+const formatIdeasCount = (count: number) =>
+  count === 0 ? "Sin ideas" : `${count} idea${count === 1 ? "" : "s"}`;
+
 // Un toque más corto que esto no cuenta como "mantener presionado"
 const SHORT_TAP_MS = 300;
 
@@ -44,7 +61,6 @@ const ActiveNoteView = () => {
     saveUpdatesNotesOnDBorLocalStorage,
     setLoadingSaveNote,
   } = useNotes();
-  const [isHoveredID, setIsHoveredID] = useState<number>(-1);
   const [isEditingID, setIsEditingID] = useState<number>(-1);
   const [editedNote, setEditedNote] = useState<INotes | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -161,6 +177,26 @@ const ActiveNoteView = () => {
     updateActiveNote({ thinkings: updatedThinkings });
   };
 
+  const composedDraft = composeDraft(draft, interimText);
+  const canSubmit = composedDraft.trim().length > 0;
+
+  const submitDraft = () => {
+    const text = composedDraft.trim();
+    if (!text) return;
+    handleNewThinking(text);
+    setDraft("");
+    // Lo que se siga dictando arranca una idea nueva, sin duplicados
+    if (isDictating) resetSegment();
+  };
+
+  // El campo crece con el contenido hasta su altura máxima (CSS); después scrollea
+  useLayoutEffect(() => {
+    const el = textAreaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [composedDraft]);
+
   const handleDeleteThinking = (thinkingIndex: number) => {
     updateActiveNote({
       ...ActiveNote,
@@ -171,25 +207,35 @@ const ActiveNoteView = () => {
 
   return (
     <>
-      <div className="title">
-        <input
-          type="text"
-          value={ActiveNote?.title || ""}
-          onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
-          placeholder="Sin título"
-          className="title-input"
-        />
+      <div className="note-toolbar">
+        <div className="save-status" role="status" aria-live="polite">
+          {loadingSaveNote ? (
+            <>
+              <LoaderCircle size={14} className="loading-icon" />
+              Guardando…
+            </>
+          ) : (
+            <>
+              <Check size={14} className="check-icon" />
+              Guardado
+            </>
+          )}
+          <span aria-hidden="true">·</span>
+          <span>{formatIdeasCount(ActiveNote?.thinkings.length ?? 0)}</span>
+        </div>
         <div className="title-actions">
           <button
             onClick={() => setIsSearchOpen((prev) => !prev)}
             className="action-btn search-toggle"
             title="Buscar (Ctrl+F)"
+            aria-pressed={isSearchOpen}
           >
-            <Search size={18} />
+            <Search size={17} />
           </button>
           <CopyButton
             getText={() => (ActiveNote ? formatNoteForCopy(ActiveNote) : "")}
             label="Copiar nota"
+            size={17}
           />
           <DownloadMenu note={ActiveNote} />
           <NoteInfo
@@ -197,13 +243,6 @@ const ActiveNoteView = () => {
             createdAt={ActiveNote?.createdAt}
             updatedAt={ActiveNote?.updatedAt}
           />
-          <div className="save-indicator">
-            {loadingSaveNote ? (
-              <LoaderCircle size={20} className="loading-icon" />
-            ) : (
-              <Check size={20} className="check-icon" />
-            )}
-          </div>
         </div>
       </div>
 
@@ -235,6 +274,17 @@ const ActiveNoteView = () => {
         </div>
       )}
 
+      <div className="note-heading">
+        <input
+          type="text"
+          value={ActiveNote?.title || ""}
+          onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
+          placeholder="Sin título"
+          className="title-input"
+          aria-label="Título de la nota"
+        />
+      </div>
+
       <div className="thinking-list">
         <div className="thinkings-container">
           {ActiveNote?.thinkings.map((thinking, index) => {
@@ -244,8 +294,6 @@ const ActiveNoteView = () => {
             return (
               <div
                 key={index}
-                onMouseEnter={() => setIsHoveredID(index)}
-                onMouseLeave={() => setIsHoveredID(-1)}
                 className={`thinking-text-container${hasMatch ? " thinking-has-match" : ""}`}
               >
                 {isEditingID === index ? (
@@ -284,68 +332,88 @@ const ActiveNoteView = () => {
                     )}
                   </span>
                 )}
-                {isHoveredID === index && (
-                  <div className="thinking-actions">
-                    <button
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setIsEditingID((prev) => (prev === index ? -1 : index));
-                      }}
-                      className="action-btn edit"
-                      title="Editar"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <CopyButton
-                      getText={() => thinking}
-                      label="Copiar idea"
-                      size={14}
-                    />
-                    <button
-                      onClick={() => handleDeleteThinking(index)}
-                      className="action-btn delete"
-                      title="Borrar"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                )}
+                {/* Siempre en el layout (ocupan su lugar) y se muestran al pasar el mouse:
+                    así nunca tapan el texto de la idea */}
+                <div className="thinking-actions">
+                  <button
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsEditingID((prev) => (prev === index ? -1 : index));
+                    }}
+                    className="action-btn edit"
+                    title="Editar"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <CopyButton
+                    getText={() => thinking}
+                    label="Copiar idea"
+                    size={14}
+                  />
+                  <button
+                    onClick={() => handleDeleteThinking(index)}
+                    className="action-btn delete"
+                    title="Borrar"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
-        <div className="new-thinking-wrapper">
+        <p className="composer-hint">
+          Enter para agregar · Shift+Enter salto de línea
+        </p>
+        <div
+          className="composer"
+          // Tocar cualquier parte del recuadro enfoca el campo de texto
+          onClick={(e) => {
+            if (e.target === e.currentTarget) textAreaRef.current?.focus();
+          }}
+        >
           <textarea
             ref={textAreaRef}
-            value={composeDraft(draft, interimText)}
-            onChange={(e) => setDraft(stripInterim(e.target.value, interimText))}
+            rows={1}
+            value={composedDraft}
+            onChange={(e) =>
+              setDraft(stripInterim(e.target.value, interimText))
+            }
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                const text = composeDraft(draft, interimText).trim();
-                if (text) handleNewThinking(text);
-                setDraft("");
-                // Lo que se siga dictando arranca una idea nueva, sin duplicados
-                if (isDictating) resetSegment();
+                submitDraft();
               }
             }}
             placeholder={
-              isDictating && !draft
-                ? "Escuchando…"
-                : "Comienza a escribir tus ideas aqui :)"
+              isDictating && !draft ? "Escuchando…" : "Escribí una idea…"
             }
-            className="thinking-input"
+            aria-label="Nueva idea"
+            className="composer-input"
           />
-          {isDictationSupported && (
-            <DictationButton
-              status={dictationStatus}
-              onToggle={() =>
-                isDictating ? stopDictation() : startDictation("toggle")
-              }
-              onHoldStart={() => startDictation("hold")}
-              onHoldEnd={handleHoldEnd}
-            />
-          )}
+          <div className="composer-actions">
+            {isDictationSupported && (
+              <DictationButton
+                status={dictationStatus}
+                onToggle={() =>
+                  isDictating ? stopDictation() : startDictation("toggle")
+                }
+                onHoldStart={() => startDictation("hold")}
+                onHoldEnd={handleHoldEnd}
+              />
+            )}
+            <button
+              type="button"
+              className={`composer-send${canSubmit ? "" : " is-empty"}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={submitDraft}
+              aria-disabled={!canSubmit}
+              title="Agregar idea (Enter)"
+              aria-label="Agregar idea"
+            >
+              <ArrowUp size={18} />
+            </button>
+          </div>
         </div>
         {dictationMessage && (
           <p

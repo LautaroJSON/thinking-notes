@@ -44,7 +44,7 @@ const NoteInfo = ({
         aria-expanded={isOpen}
         aria-controls={popoverId}
       >
-        <CircleAlert size={18} />
+        <CircleAlert size={17} />
       </button>
       {isOpen && (
         <div id={popoverId} className="note-info-popover">
