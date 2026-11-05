@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,7 +12,7 @@
 }
 
 .profile-modal-content {
-  background: white;
+  background: var(--surface-floating);
   border-radius: 8px;
   padding: 20px;
   max-width: 400px;
@@ -28,11 +28,11 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .profile-modal-close:hover {
-  color: #333;
+  color: var(--text);
 }
 
 .profile-modal-body {
@@ -53,18 +53,18 @@
 .profile-name {
   font-size: 1.5rem;
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--text);
 }
 
 .profile-email {
   font-size: 1rem;
-  color: #666;
+  color: var(--text-muted);
   margin: 0 0 20px 0;
 }
 
 .profile-logout-btn {
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--danger);
+  color: #ffffff;
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
@@ -73,7 +73,7 @@
 }
 
 .profile-logout-btn:hover {
-  background-color: #c82333;
+  background-color: color-mix(in srgb, var(--danger) 85%, black);
 }
 
 /* Responsive: full screen on mobile */

@@ -8,7 +8,7 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: var(--negro-2);
+  color: var(--text-strong);
   opacity: 0.45;
 
   pointer-events: none;

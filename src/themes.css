@@ -1,0 +1,214 @@
+/*
+  Temas visuales. Cada color de la app sale de estas variables.
+  - Clásico: :root (valores originales de la app; es el tema por defecto).
+  - Oscuro y Atardecer: sobrescriben las variables en :root[data-theme="…"].
+  El atributo data-theme lo pone src/components/utils/theme.ts (y el script
+  inline de index.html al cargar). La tabla completa está en
+  specs/003-theme-switcher/data-model.md.
+*/
+
+:root {
+  --bg-gradient: linear-gradient(
+    to right top,
+    #ffffff,
+    #e6e5fe,
+    #c6cdfe,
+    #9fb8ff,
+    #7890ff
+  );
+
+  /* Superficies */
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --surface-muted: #f1f5f9;
+  --surface-hover: rgba(0, 0, 0, 0.05);
+  /* En Clásico y Atardecer son la misma superficie; el Oscuro las distingue */
+  --surface-panel: var(--surface);
+  --surface-input: var(--surface);
+  --surface-floating: var(--surface);
+  /* Tarjetas de notas del panel: en Clásico y Atardecer no tienen fondo propio */
+  --note-card-bg: transparent;
+  --note-card-hover: transparent;
+
+  /* Bordes */
+  --border: #e2e8f0;
+  --border-soft: #eef2f6;
+  --border-strong: #d1d1d1;
+
+  /* Texto */
+  --text-base: #000000;
+  --text-strong: #1e293b;
+  --text: #334155;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-faint: #cbd5e1;
+
+  /* Acento */
+  --primary-color: #7890ff;
+  --primary-soft: #eef1ff;
+  --on-primary: #ffffff;
+
+  /* Estados */
+  --success: #16a34a;
+  --success-soft: #ecfdf5;
+  --success-icon: #4caf50;
+  --danger: #ef4444;
+  --danger-soft: #fef2f2;
+  --highlight: #facc15;
+  --on-highlight: #1a1a1a;
+
+  /* Efectos */
+  --overlay: rgba(0, 0, 0, 0.5);
+  --shadow-panel: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --shadow-panel-soft: 0 0px 16px 0 rgba(31, 38, 135, 0.3);
+  --shadow-card: 0 2px 8px 0 rgba(63, 68, 138, 0.3);
+  --shadow-card-drag: 0 10px 24px 0 rgba(63, 68, 138, 0.45);
+  --scrollbar: var(--primary-color);
+}
+
+:root[data-theme="dark"] {
+  /* Paleta del tema "Oscuro" de Discord (no "Ceniza"): chat #1a1a1e,
+     fondo #121214. El panel lateral usa el color del chat para separarse
+     del fondo */
+  color-scheme: dark;
+
+  --bg-gradient: linear-gradient(
+    to right top,
+    #121214,
+    #121214,
+    #141416,
+    #17171a,
+    #1a1a1e
+  );
+
+  --surface: #1a1a1e;
+  --surface-alt: #1a1a1e;
+  --surface-muted: #222225;
+  --surface-hover: rgba(255, 255, 255, 0.04);
+  /* Mismo color que la nota: con #121214 el panel se perdía contra el fondo */
+  --surface-panel: #1a1a1e;
+  --surface-input: #222327;
+  --surface-floating: #252429;
+  /* Gris de hover de Discord siempre visible, y el de seleccionado al pasar */
+  --note-card-bg: #222225;
+  --note-card-hover: #2c2c30;
+
+  --border: #29292d;
+  --border-soft: #29292d;
+  --border-strong: #323237;
+
+  --text-base: #efeff1;
+  --text-strong: #fbfbfb;
+  --text: #efeff1;
+  --text-muted: #abacb2;
+  --text-subtle: #96979e;
+  --text-faint: #81828a;
+
+  --primary-color: #5865f2;
+  --primary-soft: rgba(88, 101, 242, 0.2);
+  --on-primary: #ffffff;
+
+  --success: #45a366;
+  --success-soft: rgba(69, 163, 102, 0.15);
+  --success-icon: #45a366;
+  --danger: #da3e44;
+  --danger-soft: rgba(218, 62, 68, 0.15);
+  --highlight: #f0b232;
+  --on-highlight: #121214;
+
+  --overlay: rgba(0, 0, 0, 0.7);
+  --shadow-panel: 0 8px 16px 0 rgba(0, 0, 0, 0.32);
+  --shadow-panel-soft: 0 0px 16px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card:
+    0 1px 0 rgba(0, 0, 0, 0.3),
+    0 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-card-drag: 0 8px 16px 0 rgba(0, 0, 0, 0.45);
+  --scrollbar: #323237;
+}
+
+:root[data-theme="sunset"] {
+  --bg-gradient: linear-gradient(
+    to right top,
+    #fff7ed,
+    #ffe1cc,
+    #ffc4a8,
+    #f6a192,
+    #d9a3d6
+  );
+
+  --surface: #fffaf3;
+  --surface-alt: #fdf3e8;
+  --surface-muted: #f9ebdd;
+  --surface-hover: rgba(120, 60, 40, 0.06);
+
+  --border: #f0dccb;
+  --border-soft: #f5e6d8;
+  --border-strong: #e6c9b4;
+
+  --text-base: #2e1c16;
+  --text-strong: #2e1c16;
+  --text: #4a2f27;
+  --text-muted: #7d5646;
+  --text-subtle: #a07a69;
+  --text-faint: #dcc3b3;
+
+  --primary-color: #c2553a;
+  --primary-soft: #fbe4dc;
+  --on-primary: #ffffff;
+
+  --success: #3f8a4a;
+  --success-soft: #e8f3e3;
+  --success-icon: #3f8a4a;
+  --danger: #c0392b;
+  --danger-soft: #fde8e4;
+  --highlight: #f5b841;
+  --on-highlight: #2e1c16;
+
+  --overlay: rgba(46, 28, 22, 0.5);
+  --shadow-panel: 0 8px 32px 0 rgba(150, 70, 50, 0.28);
+  --shadow-panel-soft: 0 0px 16px 0 rgba(150, 70, 50, 0.25);
+  --shadow-card: 0 2px 8px 0 rgba(150, 70, 50, 0.22);
+  --shadow-card-drag: 0 10px 24px 0 rgba(150, 70, 50, 0.35);
+  --scrollbar: var(--primary-color);
+}
+
+/* Muestras del selector de temas: valores fijos de cada tema, porque se ven
+   dentro del tema activo */
+[data-theme-preview] {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2px solid;
+}
+
+[data-theme-preview="classic"] {
+  background: linear-gradient(135deg, #ffffff 0%, #c6cdfe 50%, #7890ff 100%);
+  border-color: #7890ff;
+}
+
+[data-theme-preview="dark"] {
+  background: linear-gradient(135deg, #252429 0%, #1a1a1e 50%, #121214 100%);
+  border-color: #5865f2;
+}
+
+[data-theme-preview="sunset"] {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffc4a8 50%, #d9a3d6 100%);
+  border-color: #c2553a;
+}
+
+/* Transición de colores solo mientras se cambia de tema (no al cargar) */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease !important;
+  }
+}
