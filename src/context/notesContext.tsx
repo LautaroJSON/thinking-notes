@@ -16,6 +16,7 @@ import {
 import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
+import { clearDraft } from "@/components/utils/drafts";
 import { NotesContext } from "./notes-context";
 
 export const NotesProvider = ({ children }: { children: ReactNode }) => {
@@ -172,6 +173,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setWaitingResponse("deletingNote");
         const deletedNoteIdbyAPI = await deleteNoteService(id);
         // todo: agregar estado "deletingNote" para mostrar indicador de carga en la nota que se está eliminando
+        clearDraft(deletedNoteIdbyAPI.id);
         setNotes((prevNotes) => {
           const newArrayNote = prevNotes.filter(
             (note) => note.id !== deletedNoteIdbyAPI.id,
@@ -186,6 +188,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setWaitingResponse("none");
       }
     } else if (isLogged === "offline") {
+      clearDraft(id);
       setNotes((prevNotes) => {
         const newArrayNote = prevNotes.filter((note) => note.id !== id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));
