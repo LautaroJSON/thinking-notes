@@ -1,4 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { supabase } from "../../lib/supabaseClient";
 import {
   createNoteService,
@@ -72,7 +79,19 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isLogged]);
 
-  const saveUpdatesNotesOnDBorLocalStorage = async () => {
+  // Referencia al estado más reciente para que el guardado tenga una
+  // identidad estable: si dependiera de `notes`/`activeNoteState`, cambiaría
+  // en cada tecla y después de cada guardado (setNotes), y el efecto que lo
+  // invoca al cambiar el valor con debounce volvería a guardar en loop.
+  // Se sincroniza en un layout effect para que esté al día antes de que
+  // corran los efectos de los componentes hijos.
+  const latestStateRef = useRef({ isLogged, activeNoteState, notes });
+  useLayoutEffect(() => {
+    latestStateRef.current = { isLogged, activeNoteState, notes };
+  }, [isLogged, activeNoteState, notes]);
+
+  const saveUpdatesNotesOnDBorLocalStorage = useCallback(async () => {
+    const { isLogged, activeNoteState, notes } = latestStateRef.current;
     if (isLogged === "online") {
       try {
         setWaitingResponse("editingNote");
@@ -111,7 +130,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setLoadingSaveNote(false);
       }
     }
-  };
+  }, []);
 
   const addNote = async () => {
     const newNote: INotes = {
