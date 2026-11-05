@@ -5,6 +5,13 @@ import { LoaderCircle, Check, Pencil, Trash2, Search, X } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
 import type { Segment } from "@/hooks/useNoteSearch";
+import { useSpeechDictation } from "@/hooks/useSpeechDictation";
+import {
+  appendTranscript,
+  composeDraft,
+  stripInterim,
+} from "@/components/utils/dictation";
+import DictationButton from "./dictationButton";
 
 // Renderiza un párrafo con los matches resaltados
 const HighlightedText = ({ segments }: { segments: Segment[] }) => (
@@ -21,6 +28,9 @@ const HighlightedText = ({ segments }: { segments: Segment[] }) => (
   </>
 );
 
+// Un toque más corto que esto no cuenta como "mantener presionado"
+const SHORT_TAP_MS = 300;
+
 const ActiveNoteView = () => {
   const {
     activeNoteState,
@@ -33,6 +43,7 @@ const ActiveNoteView = () => {
   const [isEditingID, setIsEditingID] = useState<number>(-1);
   const [editedNote, setEditedNote] = useState<INotes | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [draft, setDraft] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const ActiveNote = activeNoteState;
@@ -41,6 +52,52 @@ const ActiveNoteView = () => {
   const { query, setQuery, matchCount, matchMap } = useNoteSearch(
     ActiveNote ?? null,
   );
+
+  const handleFinalText = useCallback((text: string) => {
+    setDraft((prev) => appendTranscript(prev, text));
+  }, []);
+
+  const {
+    isSupported: isDictationSupported,
+    status: dictationStatus,
+    mode: dictationMode,
+    interimText,
+    message: dictationMessage,
+    start: startDictation,
+    stop: stopDictation,
+    cancel: cancelDictation,
+    resetSegment,
+    showHint,
+  } = useSpeechDictation({ onFinalText: handleFinalText });
+  const isDictating = dictationStatus === "listening";
+  const activeNoteId = ActiveNote?.id;
+
+  // Cortar el dictado al cambiar de nota: nunca escribir en otra nota
+  useEffect(() => {
+    cancelDictation();
+  }, [activeNoteId, cancelDictation]);
+
+  // Cortar el dictado si la app pasa a segundo plano
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) cancelDictation();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [cancelDictation]);
+
+  // En modo "mantener presionado", perder el foco de la ventana equivale a soltar
+  useEffect(() => {
+    if (dictationMode !== "hold") return;
+    window.addEventListener("blur", stopDictation);
+    return () => window.removeEventListener("blur", stopDictation);
+  }, [dictationMode, stopDictation]);
+
+  const handleHoldEnd = (durationMs: number) => {
+    stopDictation();
+    if (durationMs < SHORT_TAP_MS) showHint("short-tap");
+  };
 
   useEffect(() => {
     if (debouncedActiveNote) {
@@ -226,18 +283,48 @@ const ActiveNoteView = () => {
             );
           })}
         </div>
-        <textarea
-          ref={textAreaRef}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleNewThinking((e.currentTarget as HTMLTextAreaElement).value);
-              e.currentTarget.value = "";
+        <div className="new-thinking-wrapper">
+          <textarea
+            ref={textAreaRef}
+            value={composeDraft(draft, interimText)}
+            onChange={(e) => setDraft(stripInterim(e.target.value, interimText))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const text = composeDraft(draft, interimText).trim();
+                if (text) handleNewThinking(text);
+                setDraft("");
+                // Lo que se siga dictando arranca una idea nueva, sin duplicados
+                if (isDictating) resetSegment();
+              }
+            }}
+            placeholder={
+              isDictating && !draft
+                ? "Escuchando…"
+                : "Comienza a escribir tus ideas aqui :)"
             }
-          }}
-          placeholder="Comienza a escribir tus ideas aqui :)"
-          className="thinking-input"
-        />
+            className="thinking-input"
+          />
+          {isDictationSupported && (
+            <DictationButton
+              status={dictationStatus}
+              onToggle={() =>
+                isDictating ? stopDictation() : startDictation("toggle")
+              }
+              onHoldStart={() => startDictation("hold")}
+              onHoldEnd={handleHoldEnd}
+            />
+          )}
+        </div>
+        {dictationMessage && (
+          <p
+            className={`dictation-message${dictationMessage.kind === "error" ? " is-error" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            {dictationMessage.text}
+          </p>
+        )}
       </div>
     </>
   );

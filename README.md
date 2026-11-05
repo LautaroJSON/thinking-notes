@@ -14,6 +14,8 @@ Thinking Notes es una aplicación web minimalista y ultra-reactiva diseñada par
 ## ✨ Características Principales
 Gestión de "Thinkings": Crea pensamientos dentro de cada nota. Cada uno es editable de forma independiente con auto-enfoque inteligente.
 
+Dictado por voz: Un botón de micrófono junto al campo de nueva idea transcribe lo que decís (en español) mientras hablás. En la computadora funciona como interruptor (clic para empezar y clic para terminar); en el celular, se dicta mientras se mantiene presionado. Disponible en Chrome, Edge y Safari; en navegadores sin soporte el botón no aparece.
+
 Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.
 
 Interfaz Dinámica:
