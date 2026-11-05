@@ -8,7 +8,7 @@
   100% {
     width: 275px;
     background-color: var(--primary-color);
-    color: white;
+    color: var(--on-primary);
   }
 }
 
@@ -22,9 +22,10 @@
 
   padding: 12px 16px 12px 16px;
   border-radius: 0px 12px 12px 0px;
-  border-top: 1px solid #d1d1d1;
+  border-top: 1px solid var(--border-strong);
+  background-color: var(--note-card-bg);
 
-  box-shadow: 0 2px 8px 0 rgba(63, 68, 138, 0.3);
+  box-shadow: var(--shadow-card);
   font-size: large;
   transition: width 0.2s ease;
 
@@ -48,7 +49,7 @@
   cursor: grabbing;
   scale: 1.02;
   opacity: 0.95;
-  box-shadow: 0 10px 24px 0 rgba(63, 68, 138, 0.45);
+  box-shadow: var(--shadow-card-drag);
 }
 
 .note-item-container p {
@@ -60,6 +61,7 @@
 
 .note-item-container:hover {
   width: 275px;
+  background-color: var(--note-card-hover);
   padding: 12px 16px;
 }
 
@@ -78,21 +80,21 @@
 @keyframes spawnNote {
   0% {
     width: 0px;
-    background-color: #555555;
+    background-color: var(--text-muted);
     opacity: 0.5;
     transform: translateX(-10px);
   }
   100% {
     width: 230px;
-    background-color: #d1d1d1;
+    background-color: var(--border-strong);
     opacity: 1;
     transform: translateX(0);
   }
 }
 
 .loading {
-  background-color: #d1d1d1;
-  color: #1f1f1f;
+  background-color: var(--border-strong);
+  color: var(--text-strong);
   display: flex;
   gap: 10px;
 

@@ -28,6 +28,7 @@ import useAuthentication from "@/hooks/useAuthentication";
 import { supabase } from "../../../lib/supabaseClient";
 import ProfileModal from "../profile";
 import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
+import ThemeSelector from "../themeSelector";
 
 // Tiempo que se muestra el aviso de error al guardar el orden
 const REORDER_ERROR_TIMEOUT_MS = 4000;
@@ -152,8 +153,11 @@ const Sidebar = () => {
               onClick={() => setCollapsed(false)}
               title="Expandir"
             >
-              <CircleArrowRight color="white" />
+              <CircleArrowRight />
             </button>
+            <div className="sidebar-collapsed-theme">
+              <ThemeSelector placement="right" />
+            </div>
           </div>
         ) : (
           <>
@@ -193,7 +197,7 @@ const Sidebar = () => {
                   className="circular-button"
                   title="Borrar"
                 >
-                  <Trash2 color="white" />
+                  <Trash2 />
                 </button>
               ) : null}
               <button
@@ -203,14 +207,14 @@ const Sidebar = () => {
                 }}
                 title="Agregar nota"
               >
-                <Plus color="white" />
+                <Plus />
               </button>
               <button
                 className="circular-button"
                 onClick={() => setCollapsed(!collapsed)}
                 title="Colapsar/Expandir"
               >
-                <CircleArrowLeft color="white" />
+                <CircleArrowLeft />
               </button>
             </div>
           </>
@@ -263,6 +267,11 @@ const Sidebar = () => {
           </div>
         )}
       </div>
+      {!collapsed && (
+        <div className="sidebar-footer">
+          <ThemeSelector />
+        </div>
+      )}
       <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />
     </aside>
   );

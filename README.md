@@ -18,6 +18,8 @@ Dictado por voz: Un botón de micrófono junto al campo de nueva idea transcribe
 
 Reordenar notas: Arrastrá las notas del panel izquierdo para ordenarlas como quieras. En la computadora, hacé clic y arrastrá; en el celular, mantené apretada la nota medio segundo hasta que se levante y movela. El orden se guarda automáticamente, tanto sin cuenta (en el dispositivo) como con sesión iniciada (se sincroniza entre dispositivos).
 
+Temas visuales: El botón de la paleta, al pie del panel izquierdo, permite elegir entre tres temas: Clásico (el azul de siempre), Oscuro (para escribir de noche) y Atardecer (cálido, en tonos durazno y terracota). Con el panel colapsado, en la computadora el botón aparece dentro de la cápsula; en el celular, se usa desde el panel expandido. El tema elegido se guarda en el navegador, con o sin sesión iniciada.
+
 Fechas de la nota: El botón de información junto al buscador muestra cuándo se creó la nota y cuándo se modificó por última vez. Las notas creadas sin cuenta antes de esta versión no tienen fecha registrada.
 
 Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.

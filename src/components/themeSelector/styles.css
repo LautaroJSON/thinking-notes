@@ -1,0 +1,113 @@
+.theme-selector {
+  position: relative;
+  display: flex;
+}
+
+/* Área táctil de al menos 40 px aunque el botón mida 34 px */
+.theme-selector-toggle {
+  position: relative;
+}
+
+.theme-selector-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.theme-selector-toggle[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+@keyframes theme-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.theme-menu {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 180px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  box-sizing: border-box;
+
+  background: var(--surface-floating);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-panel);
+
+  animation: theme-menu-in 0.12s ease-out;
+}
+
+/* Pie del panel: se abre hacia arriba, sobre la lista de notas */
+.theme-menu--top {
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+
+/* Panel colapsado: se abre a la derecha de la cápsula */
+.theme-menu--right {
+  bottom: 0;
+  left: calc(100% + 12px);
+}
+
+.theme-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-menu-item:hover {
+  background: var(--surface-hover);
+}
+
+.theme-menu-item:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.theme-menu-item.is-active {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.theme-menu-label {
+  flex: 1;
+}
+
+.theme-menu-check {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .theme-menu-item {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-menu {
+    animation: none;
+  }
+}
