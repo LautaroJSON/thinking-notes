@@ -108,7 +108,7 @@ const Sidebar = () => {
       await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/thinking-notes/`,
+          redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
         },
       });
     } catch (error) {

@@ -7,7 +7,9 @@ import pkg from "./package.json";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/thinking-notes/",
+  // GitHub Pages sirve la app en /thinking-notes/; otros hosts (Vercel) en la
+  // raíz, configurando BASE_PATH=/ en sus variables de entorno.
+  base: process.env.BASE_PATH ?? "/thinking-notes/",
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
