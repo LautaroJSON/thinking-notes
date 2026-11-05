@@ -1,5 +1,16 @@
 <!--
 Sync Impact Report
+- Versión: 1.0.0 → 1.1.0 (MINOR: cambio material en "Restricciones Técnicas")
+- Secciones modificadas:
+  - Restricciones Técnicas › Despliegue: GitHub Pages → Vercel.
+  - Restricciones Técnicas › Rutas y assets: la base pasa de "/thinking-notes/" a "/".
+  - Flujo de Desarrollo y Calidad › Gates: `npm test` corre en el workflow de CI (ya no
+    hay workflow de deploy en GitHub Actions).
+- Principios: sin cambios.
+- Plantillas dependientes: sin cambios necesarios.
+- TODOs diferidos: los de 1.0.0 (README dice React 18).
+
+Historial — 1.0.0:
 - Versión: (plantilla sin completar) → 1.0.0
 - Principios definidos (nuevos):
   I. Paridad Offline/Online (NO NEGOCIABLE)
@@ -97,12 +108,12 @@ mejoras reales.
 
 ## Restricciones Técnicas
 
-- **Despliegue**: GitHub Pages en `https://lautarojson.github.io/thinking-notes/`,
-  publicado por GitHub Actions (`actions/deploy-pages`) en cada push a `main`. El sitio
-  NO usa dominio personalizado: NO DEBE existir un archivo `CNAME`.
-- **Rutas y assets**: Vite usa `base: "/thinking-notes/"`. Todo asset o ruta interna
-  DEBE funcionar con ese prefijo (usar `import.meta.env.BASE_URL` o imports de Vite, no
-  rutas absolutas como `/imagen.png`).
+- **Despliegue**: Vercel en `https://thinking-notes.vercel.app/`, desplegado
+  automáticamente en cada push a `main`. Las variables `VITE_*` se configuran en el
+  proyecto de Vercel. GitHub Pages NO se usa.
+- **Rutas y assets**: Vite usa `base: "/"`. Las rutas internas DEBERÍAN construirse con
+  `import.meta.env.BASE_URL` o imports de Vite, para no depender de dónde se sirve la
+  app.
 - **Capa de red**: toda llamada a la API remota DEBE pasar por `src/services`; los
   componentes no hacen `fetch` directo. La autenticación se hace solo con el cliente de
   Supabase (`lib/supabaseClient`).
@@ -118,7 +129,7 @@ mejoras reales.
   Pull Request.
 - **Commits**: formato Conventional Commits en español (`feat:`, `fix:`, `ci:`,
   `docs:`, `refactor:`, `test:`).
-- **Gates antes de mergear** (`npm test` también corre en el workflow de deploy):
+- **Gates antes de mergear** (`npm test` y `npm run build` también corren en el workflow de CI):
   - `npm run build` DEBE pasar.
   - Los tests de Vitest DEBEN pasar.
   - `npm run lint` NO DEBE sumar errores nuevos respecto de `main`. La deuda de lint
@@ -145,4 +156,4 @@ mejoras reales.
   excepción a un principio DEBE quedar justificada por escrito en el plan
   (sección de complejidad/excepciones).
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
+**Version**: 1.1.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
