@@ -110,3 +110,12 @@ export const deleteNoteService = async (
     method: "DELETE",
   });
 };
+
+export const reorderNotesService = async (
+  ids: string[],
+): Promise<{ ids: string[] }> => {
+  return fetchJson<{ ids: string[] }>("/notes/order", {
+    method: "PUT",
+    body: JSON.stringify({ ids }),
+  });
+};

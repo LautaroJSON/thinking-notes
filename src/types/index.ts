@@ -11,4 +11,5 @@ export type WaitingResponseType =
   | "creatingNote"
   | "deletingNote"
   | "editingNote"
+  | "reorderingNotes"
   | "none";

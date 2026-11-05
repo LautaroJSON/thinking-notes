@@ -16,6 +16,11 @@ export interface NotesContextType {
   isLogged: IsLoggedType;
   saveUpdatesNotesOnDBorLocalStorage: () => void;
   waitingResponse: WaitingResponseType;
+  /** Mueve la nota `activeId` a la posición de `overId` y guarda el orden. */
+  reorderNotes: (activeId: string, overId: string) => Promise<void>;
+  /** Error del último guardado de orden fallido; `null` si no hay. */
+  reorderError: string | null;
+  clearReorderError: () => void;
 }
 
 export const NotesContext = createContext<NotesContextType | undefined>(
