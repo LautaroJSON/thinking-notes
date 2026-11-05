@@ -32,11 +32,29 @@ import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
 // Tiempo que se muestra el aviso de error al guardar el orden
 const REORDER_ERROR_TIMEOUT_MS = 4000;
 
-// Las notas solo se mueven en vertical
-const restrictToVerticalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  x: 0,
-});
+// Las notas solo se mueven en vertical y sin salir del área visible de la
+// lista. Si la card arrastrada pudiera pasar el borde inferior, agrandaría el
+// alto scrolleable; el auto-scroll bajaría y la card volvería a pasarse,
+// generando un scroll infinito.
+const restrictToListBounds: Modifier = ({
+  transform,
+  draggingNodeRect,
+  scrollableAncestorRects,
+}) => {
+  const bounds = scrollableAncestorRects[0];
+  if (!draggingNodeRect || !bounds) {
+    return { ...transform, x: 0 };
+  }
+
+  const minY = bounds.top - draggingNodeRect.top;
+  const maxY = bounds.bottom - draggingNodeRect.bottom;
+
+  return {
+    ...transform,
+    x: 0,
+    y: Math.min(Math.max(transform.y, minY), maxY),
+  };
+};
 
 // Vibración leve al levantar una nota (donde el dispositivo la soporte)
 const vibrate = () => {
@@ -216,7 +234,7 @@ const Sidebar = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
+            modifiers={[restrictToListBounds]}
             onDragStart={vibrate}
             onDragEnd={handleDragEnd}
           >
