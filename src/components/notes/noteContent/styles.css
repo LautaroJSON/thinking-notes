@@ -333,6 +333,11 @@
   .title-input {
     text-align: center;
   }
+
+  /* Deja lugar para el número de versión debajo del cuadro de texto */
+  .thinking-list {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
 }
 
 @keyframes eclipse-fade {
