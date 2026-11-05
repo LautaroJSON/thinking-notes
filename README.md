@@ -77,3 +77,11 @@ Construir para producción:
 
 Bash
 npm run build
+
+## 🌐 Despliegue
+La app se publica en Vercel: https://thinking-notes.vercel.app/
+
+Cada push a `main` despliega automáticamente. Las variables de entorno
+(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL`) se configuran
+en el proyecto de Vercel. GitHub Actions corre los tests y el build en cada push y
+Pull Request.
