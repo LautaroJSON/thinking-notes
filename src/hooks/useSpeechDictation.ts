@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getSpeechRecognitionConstructor,
+  shouldUseContinuousRecognition,
   type DictationMessage,
   type DictationMode,
   type DictationStatus,
@@ -58,6 +59,11 @@ export interface UseSpeechDictationOptions {
    * `null` = sin soporte. Existe para los tests.
    */
   recognitionConstructor?: SpeechRecognitionConstructor | null;
+  /**
+   * Modo continuo del reconocedor. Por defecto se decide según el navegador
+   * (false en Android, ver shouldUseContinuousRecognition). Existe para los tests.
+   */
+  continuous?: boolean;
 }
 
 export interface UseSpeechDictationResult {
@@ -77,11 +83,19 @@ export interface UseSpeechDictationResult {
 export const useSpeechDictation = ({
   onFinalText,
   recognitionConstructor,
+  continuous: continuousOption,
 }: UseSpeechDictationOptions): UseSpeechDictationResult => {
   const [Ctor] = useState<SpeechRecognitionConstructor | null>(() =>
     recognitionConstructor === undefined
       ? getSpeechRecognitionConstructor()
       : recognitionConstructor,
+  );
+  const [continuous] = useState<boolean>(
+    () =>
+      continuousOption ??
+      shouldUseContinuousRecognition(
+        typeof navigator === "undefined" ? "" : navigator.userAgent,
+      ),
   );
   const [status, setStatus] = useState<DictationStatus>("idle");
   const [mode, setMode] = useState<DictationMode | null>(null);
@@ -146,7 +160,7 @@ export const useSpeechDictation = ({
     const recognition = new Ctor();
     const session: Session = { recognition, accepting: true };
     recognition.lang = LANG;
-    recognition.continuous = true;
+    recognition.continuous = continuous;
     recognition.interimResults = true;
 
     recognition.onresult = (event) => {
@@ -198,7 +212,7 @@ export const useSpeechDictation = ({
       // Por ejemplo, iOS como PWA instalada: el constructor existe pero no arranca
       failWith(session, "service-not-allowed");
     }
-  }, [Ctor, failWith]);
+  }, [Ctor, continuous, failWith]);
 
   useEffect(() => {
     openSessionRef.current = openSession;

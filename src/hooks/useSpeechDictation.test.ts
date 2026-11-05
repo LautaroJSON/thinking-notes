@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useSpeechDictation } from "./useSpeechDictation";
+import { shouldUseContinuousRecognition } from "@/types/speech";
 import {
   createFakeSpeechRecognition,
   FakeSpeechRecognition,
@@ -329,5 +330,80 @@ describe("useSpeechDictation — errores y avisos (US3)", () => {
 
     act(() => vi.advanceTimersByTime(1));
     expect(hook.result.current.message).toBeNull();
+  });
+});
+
+describe("useSpeechDictation — Android (fix de texto repetido)", () => {
+  // Chrome en Android, con continuous=true, manda cada palabra como un final
+  // nuevo con TODO el texto acumulado: "Hola", "Hola esto", "Hola esto es"...
+  const setupAndroid = () => {
+    const fake = createFakeSpeechRecognition();
+    const onFinalText = vi.fn();
+    const hook = renderHook(() =>
+      useSpeechDictation({
+        onFinalText,
+        recognitionConstructor: fake.Ctor,
+        continuous: false,
+      }),
+    );
+    return { ...fake, onFinalText, hook };
+  };
+
+  it("con continuous=false cada frase se entrega una sola vez", () => {
+    const { hook, last, onFinalText } = setupAndroid();
+    act(() => hook.result.current.start("hold"));
+    expect(last().continuous).toBe(false);
+
+    act(() => last().emitResult([{ transcript: "hola esto", isFinal: false }]));
+    act(() =>
+      last().emitResult([{ transcript: "hola esto es una nota", isFinal: true }]),
+    );
+    act(() => last().emitEnd());
+
+    act(() => last().emitResult([{ transcript: "espero que", isFinal: false }]));
+    act(() =>
+      last().emitResult([
+        { transcript: "espero que se escriba bien", isFinal: true },
+      ]),
+    );
+
+    expect(onFinalText.mock.calls).toEqual([
+      ["hola esto es una nota"],
+      ["espero que se escriba bien"],
+    ]);
+    expect(hook.result.current.status).toBe("listening");
+  });
+
+  it("frases cortas seguidas no disparan la guarda anti-bucle", () => {
+    vi.useFakeTimers();
+    const { hook, last } = setupAndroid();
+    act(() => hook.result.current.start("hold"));
+
+    for (let i = 0; i < 6; i++) {
+      act(() => last().emitResult([{ transcript: `frase ${i}`, isFinal: true }]));
+      act(() => last().emitEnd());
+    }
+
+    expect(hook.result.current.status).toBe("listening");
+    vi.useRealTimers();
+  });
+});
+
+describe("shouldUseContinuousRecognition", () => {
+  it.each([
+    [
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+      false,
+    ],
+    [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      true,
+    ],
+    [
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+      true,
+    ],
+  ])("%s → %s", (userAgent, expected) => {
+    expect(shouldUseContinuousRecognition(userAgent)).toBe(expected);
   });
 });

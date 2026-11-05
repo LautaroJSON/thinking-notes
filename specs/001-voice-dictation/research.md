@@ -23,6 +23,7 @@
 - **Rationale**: Chrome corta la sesión tras unos segundos de silencio, o en cualquier caso después de un rato, aun con `continuous`. Reiniciar en `onend` es la forma estándar de lograr un toggle "siempre escuchando". Separar "intención" de "estado real del motor" permite que el botón nunca muestre "escuchando" en falso (FR-007).
 - **Guarda anti-bucle**: si se producen más de 3 reinicios seguidos en menos de 2 segundos sin ningún resultado, se detiene y se avisa ("No se pudo mantener el dictado activo"). Así se evita un bucle cuando el navegador cierra la sesión enseguida.
 - **Alternatives considered**: no reiniciar (opción C de la clarificación, descartada por el usuario); apagar tras 30 s de silencio (opción B, descartada).
+- **Excepción Android (fix posterior)**: Chrome en Android, con `continuous = true`, entrega cada palabra como un resultado *final* nuevo con todo el texto acumulado ("Hola", "Hola esto", "Hola esto es"…), y el texto se repite en el campo. En Android se usa `continuous = false` (`shouldUseContinuousRecognition`): cada sesión entrega una sola frase final y el reinicio automático de arriba abre la siguiente. Como cada frase trae resultados, no dispara la guarda anti-bucle. Se descartó deduplicar comparando cada final con el anterior, porque recorta frases reales que empiezan igual ("sí" → "sí, claro"). Costo: en algunos dispositivos Android suena el aviso del micrófono al reabrir la sesión entre frases.
 
 ## R4. Escritorio (toggle) vs. celular (mantener presionado)
 
