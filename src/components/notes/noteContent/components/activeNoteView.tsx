@@ -14,6 +14,9 @@ import {
 import { loadDraft, saveDraft } from "@/components/utils/drafts";
 import DictationButton from "./dictationButton";
 import NoteInfo from "./noteInfo";
+import CopyButton from "./copyButton";
+import DownloadMenu from "./downloadMenu";
+import { formatNoteForCopy } from "@/components/utils/copyNote";
 
 // Renderiza un párrafo con los matches resaltados
 const HighlightedText = ({ segments }: { segments: Segment[] }) => (
@@ -184,6 +187,11 @@ const ActiveNoteView = () => {
           >
             <Search size={18} />
           </button>
+          <CopyButton
+            getText={() => (ActiveNote ? formatNoteForCopy(ActiveNote) : "")}
+            label="Copiar nota"
+          />
+          <DownloadMenu note={ActiveNote} />
           <NoteInfo
             key={activeNoteId}
             createdAt={ActiveNote?.createdAt}
@@ -288,6 +296,11 @@ const ActiveNoteView = () => {
                     >
                       <Pencil size={14} />
                     </button>
+                    <CopyButton
+                      getText={() => thinking}
+                      label="Copiar idea"
+                      size={14}
+                    />
                     <button
                       onClick={() => handleDeleteThinking(index)}
                       className="action-btn delete"

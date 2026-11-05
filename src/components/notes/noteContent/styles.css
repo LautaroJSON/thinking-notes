@@ -415,6 +415,50 @@
   gap: 8px;
 }
 
+/* Botón de copiar (nota o idea) */
+.copy-btn:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.copy-btn.is-copied {
+  color: #16a34a;
+  border-color: #16a34a;
+}
+
+/* Menú de descarga (reusa el popover de .note-info-popover) */
+.download-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
+.download-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.download-menu button:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: var(--primary-color);
+}
+
+.download-menu button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
 /* Información de la nota (fechas) */
 .note-info {
   position: relative;
