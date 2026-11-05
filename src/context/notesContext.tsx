@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type ReactNode,
-  useEffect,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import {
   createNoteService,
@@ -15,27 +9,7 @@ import {
 import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
-
-interface NotesContextType {
-  notes: INotes[];
-  addNote: () => void;
-  setNotes: (notes: INotes[]) => void;
-  deleteNote: (id: string) => void;
-  activeNoteState: INotes | null;
-  setActiveNote: (id: string) => void;
-  getActiveNote: () => INotes | null;
-  updateActiveNote: (updates: Partial<INotes>) => void;
-  closeActiveNote: () => void;
-  loadingSaveNote: boolean;
-  setLoadingSaveNote: (value: boolean) => void;
-  isLogged: IsLoggedType;
-  saveUpdatesNotesOnDBorLocalStorage: () => void;
-  waitingResponse: WaitingResponseType;
-}
-
-export const NotesContext = createContext<NotesContextType | undefined>(
-  undefined,
-);
+import { NotesContext } from "./notes-context";
 
 export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<INotes[]>([]);
@@ -51,7 +25,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        setIsLogged(Boolean(session) ? "online" : "offline");
+        setIsLogged(session ? "online" : "offline");
       } catch (error) {
         console.error("Error verificando sesión de usuario:", error);
         setIsLogged("offline");
@@ -62,7 +36,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsLogged(Boolean(session) ? "online" : "offline");
+        setIsLogged(session ? "online" : "offline");
       },
     );
 
@@ -140,7 +114,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addNote = async () => {
-    let newNote: INotes = {
+    const newNote: INotes = {
       title: "Nueva Nota :)",
       thinkings: [],
     };
@@ -251,11 +225,3 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     </NotesContext.Provider>
   );
 };
-
-export function useNotes() {
-  const context = useContext(NotesContext);
-  if (!context) {
-    throw new Error("useNotes debe usarse dentro de un NotesProvider");
-  }
-  return context;
-}

@@ -1,4 +1,4 @@
-import { useNotes } from "@/context/notesContext";
+import { useNotes } from "@/hooks/useNotes";
 import type { INotes } from "@/types";
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Check, Pencil, Trash2, Search, X } from "lucide-react";

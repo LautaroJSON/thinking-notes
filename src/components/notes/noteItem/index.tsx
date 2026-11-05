@@ -1,4 +1,4 @@
-import { useNotes } from "@/context/notesContext";
+import { useNotes } from "@/hooks/useNotes";
 import "./styles.css";
 
 // Componente que muestra solo el título de la nota
