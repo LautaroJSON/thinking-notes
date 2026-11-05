@@ -10,6 +10,8 @@ export interface RemoteNote {
   id: string;
   title: string;
   contentList: string[];
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface NoteResponse {
@@ -17,8 +19,8 @@ export interface NoteResponse {
   userId: string;
   title: string;
   contentList: string[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 interface NoteCreatePayload {

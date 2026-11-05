@@ -66,6 +66,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
             id: note.id,
             title: note.title,
             thinkings: note.contentList,
+            createdAt: note.createdAt ?? undefined,
+            updatedAt: note.updatedAt ?? undefined,
           })),
         );
       } catch (error) {
@@ -114,9 +116,22 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
                   id: response.id,
                   title: response.title,
                   thinkings: response.contentList,
+                  createdAt: response.createdAt ?? undefined,
+                  updatedAt: response.updatedAt ?? undefined,
                 }
               : note,
           ),
+        );
+        // Solo las fechas: título e ideas de la nota activa pueden tener
+        // cambios más nuevos que la respuesta.
+        setActiveNoteState((prev) =>
+          prev?.id === response.id
+            ? {
+                ...prev,
+                createdAt: response.createdAt ?? prev.createdAt,
+                updatedAt: response.updatedAt ?? prev.updatedAt,
+              }
+            : prev,
         );
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
@@ -126,11 +141,17 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       }
     } else if (isLogged === "offline") {
       try {
+        const updatedAt = new Date().toISOString();
         const newArrayNotes = notes.map((note) =>
-          note.id === activeNoteState?.id ? activeNoteState! : note,
+          note.id === activeNoteState?.id
+            ? { ...activeNoteState!, updatedAt }
+            : note,
         );
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNotes));
         setNotes(newArrayNotes);
+        setActiveNoteState((prev) =>
+          prev?.id === activeNoteState?.id ? { ...prev!, updatedAt } : prev,
+        );
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
       } finally {
@@ -153,6 +174,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
           contentList: newNote.thinkings,
         });
         newNote.id = response.id;
+        newNote.createdAt = response.createdAt ?? undefined;
+        newNote.updatedAt = response.updatedAt ?? undefined;
         setNotes((prevNotes) => [...prevNotes, newNote]);
         setActiveNoteState(newNote);
       } catch (error) {
@@ -161,7 +184,13 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setWaitingResponse("none");
       }
     } else if (isLogged === "offline") {
-      const newNoteWithId = { ...newNote, id: uuidv4() };
+      const now = new Date().toISOString();
+      const newNoteWithId = {
+        ...newNote,
+        id: uuidv4(),
+        createdAt: now,
+        updatedAt: now,
+      };
       const newArrayNote = [...notes, newNoteWithId];
       setNotes(newArrayNote);
       try {

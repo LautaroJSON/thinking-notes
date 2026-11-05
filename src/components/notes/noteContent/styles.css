@@ -414,3 +414,62 @@
   align-items: center;
   gap: 8px;
 }
+
+/* Información de la nota (fechas) */
+.note-info {
+  position: relative;
+  display: flex;
+}
+
+.note-info-toggle[aria-expanded="true"],
+.note-info-toggle:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.note-info-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  animation: dictationFadeIn 0.15s ease-out;
+}
+
+/* Flechita apuntando al botón */
+.note-info-popover::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  transform: rotate(45deg);
+}
+
+.note-info-popover dl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.note-info-popover dt {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.note-info-popover dd {
+  margin: 0;
+  color: #334155;
+}

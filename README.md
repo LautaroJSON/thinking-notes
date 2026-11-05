@@ -18,6 +18,8 @@ Dictado por voz: Un botón de micrófono junto al campo de nueva idea transcribe
 
 Reordenar notas: Arrastrá las notas del panel izquierdo para ordenarlas como quieras. En la computadora, hacé clic y arrastrá; en el celular, mantené apretada la nota medio segundo hasta que se levante y movela. El orden se guarda automáticamente, tanto sin cuenta (en el dispositivo) como con sesión iniciada (se sincroniza entre dispositivos).
 
+Fechas de la nota: El botón de información junto al buscador muestra cuándo se creó la nota y cuándo se modificó por última vez. Las notas creadas sin cuenta antes de esta versión no tienen fecha registrada.
+
 Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.
 
 Interfaz Dinámica:
