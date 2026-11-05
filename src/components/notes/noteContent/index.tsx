@@ -1,4 +1,4 @@
-import { useNotes } from "@/context/notesContext";
+import { useNotes } from "@/hooks/useNotes";
 import ActiveNoteView from "./components/activeNoteView";
 import NoActiveNote from "./components/noActiveNote";
 import "./styles.css";

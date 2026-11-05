@@ -1,6 +1,6 @@
-import { useNotes } from "@/context/notesContext";
+import { useNotes } from "@/hooks/useNotes";
 import type { INotes } from "@/types";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LoaderCircle, Check, Pencil, Trash2, Search, X } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
@@ -46,7 +46,7 @@ const ActiveNoteView = () => {
     if (debouncedActiveNote) {
       saveUpdatesNotesOnDBorLocalStorage();
     }
-  }, [debouncedActiveNote]);
+  }, [debouncedActiveNote, saveUpdatesNotesOnDBorLocalStorage]);
 
   // Foco automático al abrir el buscador
   useEffect(() => {
@@ -54,6 +54,11 @@ const ActiveNoteView = () => {
       searchInputRef.current?.focus();
     }
   }, [isSearchOpen]);
+
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setQuery("");
+  }, [setQuery]);
 
   // Atajo de teclado: Ctrl+F / Cmd+F para abrir buscador
   useEffect(() => {
@@ -68,12 +73,7 @@ const ActiveNoteView = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearchOpen]);
-
-  const handleCloseSearch = () => {
-    setIsSearchOpen(false);
-    setQuery("");
-  };
+  }, [isSearchOpen, handleCloseSearch]);
 
   const handleUpdateActiveNote = (updates: Partial<INotes>) => {
     setLoadingSaveNote(true);

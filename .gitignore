@@ -28,3 +28,6 @@ dist-ssr
 
 # Claude Code (configuración local/personal)
 .claude/settings.local.json
+
+# Artefactos de TypeScript
+*.tsbuildinfo

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { useState } from "react";
-import { useNotes } from "@/context/notesContext";
+import { useNotes } from "@/hooks/useNotes";
 import { NoteItem } from "../notes/noteItem";
 import useAuthentication from "@/hooks/useAuthentication";
 import { supabase } from "../../../lib/supabaseClient";
