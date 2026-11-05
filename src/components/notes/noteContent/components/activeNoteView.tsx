@@ -13,6 +13,7 @@ import {
 } from "@/components/utils/dictation";
 import { loadDraft, saveDraft } from "@/components/utils/drafts";
 import DictationButton from "./dictationButton";
+import NoteInfo from "./noteInfo";
 
 // Renderiza un párrafo con los matches resaltados
 const HighlightedText = ({ segments }: { segments: Segment[] }) => (
@@ -183,6 +184,11 @@ const ActiveNoteView = () => {
           >
             <Search size={18} />
           </button>
+          <NoteInfo
+            key={activeNoteId}
+            createdAt={ActiveNote?.createdAt}
+            updatedAt={ActiveNote?.updatedAt}
+          />
           <div className="save-indicator">
             {loadingSaveNote ? (
               <LoaderCircle size={20} className="loading-icon" />

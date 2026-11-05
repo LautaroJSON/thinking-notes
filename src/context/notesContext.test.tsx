@@ -147,7 +147,7 @@ describe("NotesProvider", () => {
       });
       expect(setItem).toHaveBeenCalledTimes(1);
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual([
-        { ...SAVED_NOTE, title: "Idea editada" },
+        { ...SAVED_NOTE, title: "Idea editada", updatedAt: expect.any(String) },
       ]);
       expect(service.updateNoteService).not.toHaveBeenCalled();
     });
@@ -155,7 +155,13 @@ describe("NotesProvider", () => {
     it("online: llama a la API una sola vez y no entra en loop", async () => {
       mockSession(true);
       vi.mocked(service.getNotesService).mockResolvedValue([
-        { id: "n1", title: "Idea", contentList: ["a"] },
+        {
+          id: "n1",
+          title: "Idea",
+          contentList: ["a"],
+          createdAt: "2026-11-01T12:00:00.000Z",
+          updatedAt: "2026-11-01T12:00:00.000Z",
+        },
       ]);
       vi.mocked(service.updateNoteService).mockImplementation(
         async (id, payload) => {
@@ -169,8 +175,8 @@ describe("NotesProvider", () => {
             userId: "u1",
             title: payload.title ?? "",
             contentList: payload.contentList ?? [],
-            createdAt: "",
-            updatedAt: "",
+            createdAt: "2026-11-01T12:00:00.000Z",
+            updatedAt: "2026-11-05T12:00:00.000Z",
           };
         },
       );
@@ -191,6 +197,11 @@ describe("NotesProvider", () => {
         contentList: ["a"],
       });
       expect(screen.getByDisplayValue("Idea editada")).toBeTruthy();
+
+      // La nota activa refleja la fecha de modificación que devolvió la API
+      fireEvent.click(screen.getByLabelText("Información de la nota"));
+      expect(screen.getByText(/1 de noviembre de 2026/)).toBeTruthy();
+      expect(screen.getByText(/5 de noviembre de 2026/)).toBeTruthy();
     });
 
     it("guarda el último valor tras varias ediciones seguidas", async () => {
@@ -226,6 +237,8 @@ describe("NotesProvider", () => {
       id,
       title: id,
       contentList: [],
+      createdAt: null,
+      updatedAt: null,
     }));
     const ids = (notes: { id?: string }[]) => notes.map((n) => n.id);
 
