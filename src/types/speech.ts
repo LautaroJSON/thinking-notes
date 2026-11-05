@@ -77,3 +77,12 @@ export const getSpeechRecognitionConstructor =
     const w = window as WindowWithSpeech;
     return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
   };
+
+/**
+ * Chrome en Android, con `continuous = true`, entrega cada palabra como un
+ * resultado final nuevo con todo el texto acumulado ("Hola", "Hola esto"...),
+ * lo que repite el texto. Ahí se usa `continuous = false`: cada sesión entrega
+ * una frase y el reinicio automático abre la siguiente.
+ */
+export const shouldUseContinuousRecognition = (userAgent: string): boolean =>
+  !/Android/i.test(userAgent);
