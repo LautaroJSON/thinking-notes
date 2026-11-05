@@ -31,7 +31,24 @@
   position: relative;
   z-index: 1;
   user-select: none;
+  -webkit-user-select: none;
+  /* Mantener apretado en iOS no debe mostrar el menú de "copiar/compartir" */
+  -webkit-touch-callout: none;
+  /* "manipulation" (no "none"): el scroll táctil sigue funcionando hasta que
+     el long-press activa el arrastre */
+  touch-action: manipulation;
   cursor: pointer;
+}
+
+/* Nota que se está arrastrando para reordenar */
+.note-item-container.dragging {
+  /* Ancho fijo mientras se arrastra, aunque el puntero salga de la card */
+  width: 275px;
+  z-index: 10;
+  cursor: grabbing;
+  scale: 1.02;
+  opacity: 0.95;
+  box-shadow: 0 10px 24px 0 rgba(63, 68, 138, 0.45);
 }
 
 .note-item-container p {

@@ -7,13 +7,43 @@ import {
   User,
 } from "lucide-react";
 import "./styles.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useNotes } from "@/hooks/useNotes";
 import { NoteItem } from "../notes/noteItem";
 import useAuthentication from "@/hooks/useAuthentication";
 import { supabase } from "../../../lib/supabaseClient";
 import ProfileModal from "../profile";
 import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
+
+// Tiempo que se muestra el aviso de error al guardar el orden
+const REORDER_ERROR_TIMEOUT_MS = 4000;
+
+// Las notas solo se mueven en vertical
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  x: 0,
+});
+
+// Vibración leve al levantar una nota (donde el dispositivo la soporte)
+const vibrate = () => {
+  if (typeof navigator.vibrate === "function") {
+    navigator.vibrate(10);
+  }
+};
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -27,7 +57,32 @@ const Sidebar = () => {
     getActiveNote,
     closeActiveNote,
     waitingResponse,
+    reorderNotes,
+    reorderError,
+    clearReorderError,
   } = useNotes();
+
+  // Mouse: un clic sin moverse sigue abriendo la nota; el arrastre empieza a
+  // los 6 px. Táctil: hay que mantener apretado 400 ms; si el dedo se mueve
+  // antes, es un scroll normal de la lista.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 400, tolerance: 6 },
+    }),
+  );
+  const isReorderDisabled = waitingResponse !== "none";
+
+  useEffect(() => {
+    if (!reorderError) return;
+    const timeout = setTimeout(clearReorderError, REORDER_ERROR_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [reorderError, clearReorderError]);
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    reorderNotes(String(active.id), String(over.id));
+  };
 
   const activeNoteID = getActiveNote()?.id || null;
   const handleSignIn = async () => {
@@ -143,16 +198,44 @@ const Sidebar = () => {
           </>
         )}
       </div>
+      {!collapsed &&
+        (waitingResponse === "reorderingNotes" || reorderError) && (
+          <div className="sidebar-reorder-status" role="status">
+            {reorderError ? (
+              <span className="sidebar-reorder-error">{reorderError}</span>
+            ) : (
+              <>
+                <Loader2 size={14} className="spinner-icon" />
+                <span>Guardando orden…</span>
+              </>
+            )}
+          </div>
+        )}
       <div className="sidebar-notes-list">
-        {!collapsed &&
-          notes.map((note) => (
-            <NoteItem
-              id={note.id!}
-              key={note.id!}
-              title={note.title}
-              onDobleClick={() => handleSecActiveNote(note.id!)}
-            />
-          ))}
+        {!collapsed && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragStart={vibrate}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={notes.map((note) => note.id!)}
+              strategy={verticalListSortingStrategy}
+            >
+              {notes.map((note) => (
+                <NoteItem
+                  id={note.id!}
+                  key={note.id!}
+                  title={note.title}
+                  disabled={isReorderDisabled}
+                  onDobleClick={() => handleSecActiveNote(note.id!)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        )}
         {!collapsed && waitingResponse === "creatingNote" && (
           <FakeItemLoading />
         )}
