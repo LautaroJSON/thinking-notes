@@ -15,9 +15,12 @@
   user-select: none;
 }
 
+/* En móvil la nota ocupa toda la pantalla: va pegado a la esquina,
+   en el margen libre que deja .thinking-list debajo del cuadro de texto */
 @media (max-width: 768px) {
   .app-version {
-    left: 12px;
-    bottom: 8px;
+    left: 10px;
+    bottom: max(4px, env(safe-area-inset-bottom));
+    font-size: 10px;
   }
 }
