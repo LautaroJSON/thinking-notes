@@ -1,4 +1,5 @@
 import "./App.css";
+import AppVersion from "./components/appVersion";
 import NoteContent from "./components/notes/noteContent";
 import Sidebar from "./components/sidebar";
 
@@ -7,6 +8,7 @@ function App() {
     <div className="main-container">
       <Sidebar />
       <NoteContent />
+      <AppVersion />
     </div>
   );
 }
