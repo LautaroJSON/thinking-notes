@@ -16,6 +16,8 @@ Gestión de "Thinkings": Crea pensamientos dentro de cada nota. Cada uno es edit
 
 Dictado por voz: Un botón de micrófono junto al campo de nueva idea transcribe lo que decís (en español) mientras hablás. En la computadora funciona como interruptor (clic para empezar y clic para terminar); en el celular, se dicta mientras se mantiene presionado. Disponible en Chrome, Edge y Safari; en navegadores sin soporte el botón no aparece.
 
+Reordenar notas: Arrastrá las notas del panel izquierdo para ordenarlas como quieras. En la computadora, hacé clic y arrastrá; en el celular, mantené apretada la nota medio segundo hasta que se levante y movela. El orden se guarda automáticamente, tanto sin cuenta (en el dispositivo) como con sesión iniciada (se sincroniza entre dispositivos).
+
 Persistencia Inteligente (Debounce): Las notas se guardan automáticamente en localStorage. El sistema espera 5 segundos de inactividad antes de escribir en disco para optimizar el rendimiento.
 
 Interfaz Dinámica:
