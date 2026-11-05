@@ -16,7 +16,7 @@ export interface NoteResponse {
   id: string;
   userId: string;
   title: string;
-  contentList: any[];
+  contentList: string[];
   createdAt: string;
   updatedAt: string;
 }
