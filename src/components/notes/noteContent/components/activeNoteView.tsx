@@ -11,6 +11,7 @@ import {
   composeDraft,
   stripInterim,
 } from "@/components/utils/dictation";
+import { loadDraft, saveDraft } from "@/components/utils/drafts";
 import DictationButton from "./dictationButton";
 
 // Renderiza un párrafo con los matches resaltados
@@ -43,10 +44,17 @@ const ActiveNoteView = () => {
   const [isEditingID, setIsEditingID] = useState<number>(-1);
   const [editedNote, setEditedNote] = useState<INotes | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [draft, setDraft] = useState("");
+  const ActiveNote = activeNoteState;
+  const activeNoteId = ActiveNote?.id;
+  // Cada nota tiene su propio borrador: se recupera al abrirla
+  const [draft, setDraft] = useState(() => loadDraft(activeNoteId));
+  const [draftNoteId, setDraftNoteId] = useState(activeNoteId);
+  if (draftNoteId !== activeNoteId) {
+    setDraftNoteId(activeNoteId);
+    setDraft(loadDraft(activeNoteId));
+  }
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const ActiveNote = activeNoteState;
   const debouncedActiveNote = useDebounce(editedNote, 2000);
 
   const { query, setQuery, matchCount, matchMap } = useNoteSearch(
@@ -70,7 +78,11 @@ const ActiveNoteView = () => {
     showHint,
   } = useSpeechDictation({ onFinalText: handleFinalText });
   const isDictating = dictationStatus === "listening";
-  const activeNoteId = ActiveNote?.id;
+
+  // Guardar el borrador mientras se escribe, para no perderlo al salir
+  useEffect(() => {
+    saveDraft(draftNoteId, draft);
+  }, [draftNoteId, draft]);
 
   // Cortar el dictado al cambiar de nota: nunca escribir en otra nota
   useEffect(() => {
