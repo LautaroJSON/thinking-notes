@@ -11,6 +11,18 @@
   }
 }
 
+/* Celular: el sidebar sigue en el flujo de la página (la píldora o el panel
+   abierto ocupan alto), así que el escenario se fija arriba de todo para que
+   abrir o cerrar el sidebar no lo empuje hacia abajo */
+@media (max-width: 768px) {
+  .note-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
 .note-c-container {
   position: relative;
   display: flex;
