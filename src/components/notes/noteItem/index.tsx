@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useNotes } from "@/hooks/useNotes";
+import { setLaunchOrigin } from "@/components/utils/noteLaunch";
 import "./styles.css";
 
 // Transición propia del ítem (ver styles.css); se combina con la de dnd-kit
@@ -57,7 +58,11 @@ export const NoteItem = ({
       ref={setNodeRef}
       style={style}
       className={classNames}
-      onClick={onDobleClick}
+      onClick={(e) => {
+        // El panel de la nota sale desde esta tarjeta (ver noteLaunch.ts)
+        setLaunchOrigin(id, e.currentTarget.getBoundingClientRect());
+        onDobleClick();
+      }}
       // Mantener apretado en táctil no debe abrir el menú del navegador
       onContextMenu={(e) => e.preventDefault()}
       {...attributes}

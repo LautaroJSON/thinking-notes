@@ -24,6 +24,19 @@
   }
 }
 
+/* Mientras sale desde la tarjeta: transform desde la esquina y por encima
+   del sidebar (z-index 2), así se ve salir de la nota */
+.note-c-container.is-launching {
+  transform-origin: 0 0;
+  will-change: transform, clip-path, opacity;
+}
+
+@media (min-width: 769px) {
+  .note-c-container.is-launching {
+    z-index: 3;
+  }
+}
+
 .note-c-container::after {
   content: "";
   position: absolute;
