@@ -464,6 +464,63 @@
   background-color: var(--surface-muted);
 }
 
+/* Decorados de las ideas (se eligen en Personalizar; ver thinkingBullet.ts).
+   Sin data-bullet se usa el punto de arriba */
+.thinkings-container {
+  counter-reset: thinking;
+}
+
+/* Línea: acompaña todo el alto de la idea */
+:root[data-bullet="line"] .thinking-text-container {
+  padding-left: 16px;
+}
+
+:root[data-bullet="line"] .thinking-text-container::before {
+  top: 3px;
+  bottom: 3px;
+  left: 4px;
+  width: 2px;
+  height: auto;
+  border-radius: 2px;
+}
+
+/* Números: 1, 2, 3… en el orden de la nota */
+:root[data-bullet="number"] .thinking-text-container {
+  counter-increment: thinking;
+  padding-left: 34px;
+}
+
+:root[data-bullet="number"] .thinking-text-container::before {
+  content: counter(thinking);
+  top: var(--thinking-pad-y);
+  left: 4px;
+  width: 22px;
+  height: auto;
+  border-radius: 4px;
+  background: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: calc(0.95rem * var(--thinking-line));
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-color);
+}
+
+:root[data-bullet="number"] .thinking-has-match::before {
+  box-shadow: none;
+  background-color: var(--highlight);
+  color: var(--on-highlight);
+}
+
+/* Nada: solo el texto */
+:root[data-bullet="none"] .thinking-text-container {
+  padding-left: 12px;
+}
+
+:root[data-bullet="none"] .thinking-text-container::before {
+  display: none;
+}
+
 .thinking-text {
   width: 100%;
   font-size: 0.95rem;

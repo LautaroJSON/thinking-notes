@@ -29,9 +29,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import ProfileModal from "../profile";
 import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
 import { NotesSkeleton } from "../notes/noteItem/notesSkeleton";
-import ThemeSelector from "../themeSelector";
-import SoundSelector from "../soundSelector";
-import AnimationSelector from "../animationSelector";
+import CustomizeMenu from "../customize";
 import useSounds from "@/hooks/useSounds";
 
 // Duración de la transición esqueleto → notas: el esqueleto se desvanece
@@ -327,9 +325,7 @@ const Sidebar = () => {
         )}
         {!collapsed && (
           <div className="sidebar-footer">
-            <ThemeSelector />
-            <SoundSelector />
-            <AnimationSelector />
+            <CustomizeMenu />
           </div>
         )}
         <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />
