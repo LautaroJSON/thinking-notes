@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { INotes } from "@/types";
+import { getThinkingText } from "@/types/thinking";
 
 export interface Segment {
   text: string;
@@ -8,6 +9,7 @@ export interface Segment {
 
 export interface SearchMatch {
   thinkingIndex: number;
+  thinkingId: string;
   segments: Segment[];
 }
 
@@ -21,7 +23,9 @@ export function useNoteSearch(note: INotes | null) {
     const regex = new RegExp(`(${escaped})`, "gi");
 
     return note.thinkings
-      .map((paragraph, index) => {
+      .map((thinking, index) => {
+        // En los pensamientos con imágenes se busca en el texto que las acompaña
+        const paragraph = getThinkingText(thinking);
         if (!regex.test(paragraph)) return null;
         regex.lastIndex = 0;
 
@@ -44,7 +48,7 @@ export function useNoteSearch(note: INotes | null) {
           segments.push({ text: paragraph.slice(lastIndex), isMatch: false });
         }
 
-        return { thinkingIndex: index, segments };
+        return { thinkingIndex: index, thinkingId: thinking.id, segments };
       })
       .filter(Boolean) as SearchMatch[];
   }, [note, query]);
@@ -58,9 +62,9 @@ export function useNoteSearch(note: INotes | null) {
     [results],
   );
 
-  // Map para O(1) lookup por índice de párrafo
+  // Map para O(1) lookup por id de pensamiento
   const matchMap = useMemo(
-    () => new Map(results.map((r) => [r.thinkingIndex, r.segments])),
+    () => new Map(results.map((r) => [r.thinkingId, r.segments])),
     [results],
   );
 

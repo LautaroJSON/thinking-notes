@@ -1,5 +1,10 @@
 import { createContext } from "react";
-import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
+import type {
+  ImageRef,
+  INotes,
+  IsLoggedType,
+  WaitingResponseType,
+} from "../types";
 
 export interface NotesContextType {
   notes: INotes[];
@@ -21,6 +26,18 @@ export interface NotesContextType {
   /** Error del último guardado de orden fallido; `null` si no hay. */
   reorderError: string | null;
   clearReorderError: () => void;
+  /**
+   * Guarda las imágenes y agrega a la nota activa un pensamiento con ellas y
+   * el texto. Rechaza con un ImageStoreError (mensaje listo para mostrar).
+   */
+  addImageThinking: (blobs: Blob[], text: string) => Promise<void>;
+  /** Quita imágenes y/o cambia el texto de un pensamiento con imágenes. */
+  editImageThinking: (
+    thinkingId: string,
+    changes: { removedRefs: ImageRef[]; text: string },
+  ) => void;
+  /** Borra un pensamiento de la nota activa (y sus imágenes). */
+  removeThinking: (thinkingId: string) => void;
 }
 
 export const NotesContext = createContext<NotesContextType | undefined>(

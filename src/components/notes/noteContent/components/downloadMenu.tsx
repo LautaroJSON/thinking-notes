@@ -5,6 +5,7 @@ import {
   downloadNoteAsMarkdown,
   downloadNoteAsPdf,
 } from "@/components/utils/exportNote";
+import { getImageBlob } from "@/services/images/imageStore";
 
 // Botón que despliega las opciones para descargar la nota (Markdown o PDF).
 // Se cierra al elegir una opción, al tocar afuera o con Escape.
@@ -40,7 +41,7 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
     if (!note || isGeneratingPdf) return;
     setIsGeneratingPdf(true);
     try {
-      await downloadNoteAsPdf(note);
+      await downloadNoteAsPdf(note, { getImageBlob });
       setIsOpen(false);
     } catch (error) {
       console.error("No se pudo generar el PDF:", error);
@@ -84,7 +85,7 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
             ) : (
               <FileDown size={16} />
             )}
-            Descargar PDF
+            {isGeneratingPdf ? "Generando PDF…" : "Descargar PDF"}
           </button>
         </div>
       )}

@@ -15,6 +15,25 @@ import {
   updateNoteService,
 } from "../services/service";
 import type { INotes, IsLoggedType, WaitingResponseType } from "../types";
+import {
+  createImageThinking,
+  getImageRefs,
+  isImageThinking,
+  isLocalRef,
+  type ImageRef,
+} from "@/types/thinking";
+import {
+  remoteImageStore,
+  storeForMode,
+  toImageStoreError,
+} from "@/services/images/imageStore";
+import {
+  collectImageRefs,
+  enqueueImageDeletions,
+  processImageDeletionQueue,
+  sweepLocalOrphans,
+  sweepRemoteNote,
+} from "@/services/images/imageCleanup";
 import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
 import { clearDraft } from "@/components/utils/drafts";
@@ -29,6 +48,11 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [waitingResponse, setWaitingResponse] =
     useState<WaitingResponseType>("none");
   const [reorderError, setReorderError] = useState<string | null>(null);
+  // Pedidos de guardado inmediato y de limpieza de imágenes: se atienden en
+  // efectos, así corren con el estado ya confirmado (latestStateRef al día)
+  const [flushRequest, setFlushRequest] = useState(0);
+  const [cleanupRequest, setCleanupRequest] = useState(0);
+  const sweptLocalRef = useRef(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -75,6 +99,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setNotes(loadNotesFromStorage());
       } finally {
         setWaitingResponse("none");
+        setCleanupRequest((n) => n + 1);
       }
     };
 
@@ -82,6 +107,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       loadRemoteNotes();
     } else if (isLogged === "offline") {
       setNotes(loadNotesFromStorage());
+      setCleanupRequest((n) => n + 1);
     }
   }, [isLogged]);
 
@@ -133,6 +159,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
               }
             : prev,
         );
+        setCleanupRequest((n) => n + 1);
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
       } finally {
@@ -152,6 +179,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         setActiveNoteState((prev) =>
           prev?.id === activeNoteState?.id ? { ...prev!, updatedAt } : prev,
         );
+        setCleanupRequest((n) => n + 1);
       } catch (error) {
         console.error("Error guardando notas en localStorage:", error);
       } finally {
@@ -159,6 +187,156 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, []);
+
+  // Una referencia está "en uso" si alguna nota cargada la tiene. Para las
+  // locales también cuentan las notas guardadas en localStorage (con sesión,
+  // las notas en memoria son las remotas). Nunca se borra algo en uso.
+  const isImageReferenced = useCallback((ref: ImageRef) => {
+    const { notes, activeNoteState } = latestStateRef.current;
+    if (collectImageRefs([...notes, activeNoteState]).has(ref)) return true;
+    return isLocalRef(ref) && collectImageRefs(loadNotesFromStorage()).has(ref);
+  }, []);
+
+  useEffect(() => {
+    if (flushRequest > 0) saveUpdatesNotesOnDBorLocalStorage();
+  }, [flushRequest, saveUpdatesNotesOnDBorLocalStorage]);
+
+  useEffect(() => {
+    if (cleanupRequest === 0) return;
+    const { isLogged } = latestStateRef.current;
+    if (isLogged === "loading") return;
+    void processImageDeletionQueue(isImageReferenced, {
+      online: isLogged === "online",
+    });
+    // Limpieza de respaldo de imágenes locales, una vez por sesión de la app
+    if (isLogged === "offline" && !sweptLocalRef.current) {
+      sweptLocalRef.current = true;
+      void sweepLocalOrphans(isImageReferenced);
+    }
+  }, [cleanupRequest, isImageReferenced]);
+
+  /** Guarda ya la nota activa, sin esperar el debounce del editor. */
+  const flushSave = useCallback(() => {
+    setLoadingSaveNote(true);
+    setFlushRequest((n) => n + 1);
+  }, []);
+
+  /**
+   * Guarda las imágenes y agrega a la nota activa un pensamiento con todas
+   * ellas (y el texto, si hay). Si alguna falla, la nota no cambia, se borran
+   * las que sí se guardaron y se lanza un ImageStoreError con el mensaje.
+   */
+  const addImageThinking = async (blobs: Blob[], text: string) => {
+    const note = latestStateRef.current.activeNoteState;
+    if (!note?.id || blobs.length === 0) return;
+    const noteId = note.id;
+    const store = storeForMode(latestStateRef.current.isLogged);
+
+    setWaitingResponse("uploadingImages");
+    setLoadingSaveNote(true);
+    try {
+      const results = await Promise.allSettled(
+        blobs.map((blob) => store.save(blob, { noteId })),
+      );
+      const saved = results.flatMap((r) =>
+        r.status === "fulfilled" ? [r.value] : [],
+      );
+      const failure = results.find((r) => r.status === "rejected");
+
+      if (failure) {
+        try {
+          await store.remove(saved);
+        } catch {
+          enqueueImageDeletions(saved);
+        }
+        throw toImageStoreError(failure.reason);
+      }
+
+      // Si mientras tanto se cambió de nota, no se agrega a otra: los
+      // archivos se descartan para no dejar huérfanos
+      if (latestStateRef.current.activeNoteState?.id !== noteId) {
+        console.warn("Se cambió de nota durante la subida; se descartan.");
+        enqueueImageDeletions(saved);
+        setCleanupRequest((n) => n + 1);
+        setLoadingSaveNote(false);
+        return;
+      }
+
+      const thinking = createImageThinking(saved, text);
+      setActiveNoteState((prev) =>
+        prev?.id === noteId
+          ? { ...prev, thinkings: [...prev.thinkings, thinking] }
+          : prev,
+      );
+      flushSave();
+    } catch (error) {
+      setLoadingSaveNote(false);
+      throw toImageStoreError(error);
+    } finally {
+      setWaitingResponse("none");
+    }
+  };
+
+  /** Borra un pensamiento de la nota activa y encola sus imágenes. */
+  const removeThinking = (thinkingId: string) => {
+    const note = latestStateRef.current.activeNoteState;
+    const thinking = note?.thinkings.find((t) => t.id === thinkingId);
+    if (!note || !thinking) return;
+    enqueueImageDeletions(getImageRefs(thinking));
+    setActiveNoteState((prev) =>
+      prev && prev.id === note.id
+        ? {
+            ...prev,
+            thinkings: prev.thinkings.filter((t) => t.id !== thinkingId),
+          }
+        : prev,
+    );
+    flushSave();
+  };
+
+  /**
+   * Aplica la edición de un pensamiento con imágenes: quita las imágenes
+   * indicadas y actualiza el texto. Sin imágenes, pasa a ser de texto (mismo
+   * id) o, si tampoco tiene texto, se borra.
+   */
+  const editImageThinking = (
+    thinkingId: string,
+    { removedRefs, text }: { removedRefs: ImageRef[]; text: string },
+  ) => {
+    const note = latestStateRef.current.activeNoteState;
+    const thinking = note?.thinkings.find((t) => t.id === thinkingId);
+    if (!note || !thinking || !isImageThinking(thinking)) return;
+
+    const removed = new Set(removedRefs);
+    const remaining = thinking.value.filter((ref) => !removed.has(ref));
+    const trimmed = text.trim();
+    const actuallyRemoved = thinking.value.filter((ref) => removed.has(ref));
+
+    let next: INotes["thinkings"];
+    if (remaining.length > 0) {
+      const updated = {
+        id: thinking.id,
+        type: "image" as const,
+        value: remaining,
+        ...(trimmed ? { text: trimmed } : {}),
+      };
+      next = note.thinkings.map((t) => (t.id === thinkingId ? updated : t));
+    } else if (trimmed) {
+      next = note.thinkings.map((t) =>
+        t.id === thinkingId
+          ? { id: thinkingId, type: "text" as const, value: trimmed }
+          : t,
+      );
+    } else {
+      next = note.thinkings.filter((t) => t.id !== thinkingId);
+    }
+
+    enqueueImageDeletions(actuallyRemoved);
+    setActiveNoteState((prev) =>
+      prev && prev.id === note.id ? { ...prev, thinkings: next } : prev,
+    );
+    flushSave();
+  };
 
   const addNote = async () => {
     const newNote: INotes = {
@@ -203,10 +381,26 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteNote = async (id: string) => {
+    const { notes: currentNotes, activeNoteState: current } =
+      latestStateRef.current;
+    enqueueImageDeletions([
+      ...collectImageRefs([
+        currentNotes.find((note) => note.id === id),
+        current?.id === id ? current : null,
+      ]),
+    ]);
+
     if (isLogged === "online") {
       try {
         setWaitingResponse("deletingNote");
         const deletedNoteIdbyAPI = await deleteNoteService(id);
+        // Los archivos de la nota se borran después del borrado en la API;
+        // si falla, quedan en la cola de pendientes (ya encolados arriba)
+        void remoteImageStore
+          .removeNoteFolder(id)
+          .catch((error: unknown) =>
+            console.error("No se pudieron borrar las imágenes:", error),
+          );
         // todo: agregar estado "deletingNote" para mostrar indicador de carga en la nota que se está eliminando
         clearDraft(deletedNoteIdbyAPI.id);
         setNotes((prevNotes) => {
@@ -217,6 +411,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
           return newArrayNote;
         });
         closeActiveNote();
+        setCleanupRequest((n) => n + 1);
       } catch (error) {
         console.error("Error eliminando nota:", error);
       } finally {
@@ -230,6 +425,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         return newArrayNote;
       });
       closeActiveNote();
+      setCleanupRequest((n) => n + 1);
     }
   };
 
@@ -282,6 +478,10 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const setActiveNote = (id: string) => {
     const newSelectedNote = notes.find((note) => note.id === id);
     setActiveNoteState(newSelectedNote || null);
+    // Con sesión, limpieza de respaldo de la carpeta de la nota (sin bloquear)
+    if (isLogged === "online" && newSelectedNote) {
+      void sweepRemoteNote(id, isImageReferenced);
+    }
   };
 
   const getActiveNote = (): INotes | null => {
@@ -323,6 +523,9 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         reorderNotes,
         reorderError,
         clearReorderError,
+        addImageThinking,
+        editImageThinking,
+        removeThinking,
       }}
     >
       {children}

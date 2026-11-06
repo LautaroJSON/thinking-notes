@@ -1,11 +1,17 @@
 import { useNotes } from "@/hooks/useNotes";
-import type { INotes } from "@/types";
+import type { INotes, Thinking } from "@/types";
+import {
+  createTextThinking,
+  isImageThinking,
+  isTextThinking,
+} from "@/types/thinking";
 import {
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
+  type ClipboardEvent,
 } from "react";
 import {
   ArrowUp,
@@ -18,7 +24,7 @@ import {
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
-import type { Segment } from "@/hooks/useNoteSearch";
+import { usePendingImages } from "@/hooks/usePendingImages";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import {
   appendTranscript,
@@ -30,22 +36,18 @@ import DictationButton from "./dictationButton";
 import NoteInfo from "./noteInfo";
 import CopyButton from "./copyButton";
 import DownloadMenu from "./downloadMenu";
-import { formatNoteForCopy } from "@/components/utils/copyNote";
-
-// Renderiza un párrafo con los matches resaltados
-const HighlightedText = ({ segments }: { segments: Segment[] }) => (
-  <>
-    {segments.map((seg, i) =>
-      seg.isMatch ? (
-        <mark key={i} className="thinking-highlight">
-          {seg.text}
-        </mark>
-      ) : (
-        <span key={i}>{seg.text}</span>
-      ),
-    )}
-  </>
-);
+import {
+  formatNoteForCopy,
+  thinkingToPlainText,
+} from "@/components/utils/copyNote";
+import {
+  extractImageFiles,
+  hasClipboardText,
+  IMAGE_ERRORS,
+} from "@/components/utils/imageProcessing";
+import HighlightedText from "./highlightedText";
+import ImagePreviewTray from "./imagePreviewTray";
+import ImageThinkingView from "./imageThinking";
 
 const formatIdeasCount = (count: number) =>
   count === 0 ? "Sin ideas" : `${count} idea${count === 1 ? "" : "s"}`;
@@ -60,8 +62,11 @@ const ActiveNoteView = () => {
     loadingSaveNote,
     saveUpdatesNotesOnDBorLocalStorage,
     setLoadingSaveNote,
+    addImageThinking,
+    editImageThinking,
+    removeThinking,
   } = useNotes();
-  const [isEditingID, setIsEditingID] = useState<number>(-1);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editedNote, setEditedNote] = useState<INotes | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const ActiveNote = activeNoteState;
@@ -76,6 +81,14 @@ const ActiveNoteView = () => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedActiveNote = useDebounce(editedNote, 2000);
+  const pendingImages = usePendingImages();
+  const { clear: clearPendingImages } = pendingImages;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Las imágenes sin enviar no pasan a otra nota
+  useEffect(() => {
+    clearPendingImages();
+  }, [activeNoteId, clearPendingImages]);
 
   const { query, setQuery, matchCount, matchMap } = useNoteSearch(
     ActiveNote ?? null,
@@ -172,21 +185,61 @@ const ActiveNoteView = () => {
 
   const handleNewThinking = (newThinking: string) => {
     setLoadingSaveNote(true);
-    const updatedThinkings = [...(ActiveNote?.thinkings || []), newThinking];
+    const updatedThinkings = [
+      ...(ActiveNote?.thinkings || []),
+      createTextThinking(newThinking),
+    ];
     setEditedNote({ ...ActiveNote, thinkings: updatedThinkings } as INotes);
     updateActiveNote({ thinkings: updatedThinkings });
   };
 
   const composedDraft = composeDraft(draft, interimText);
-  const canSubmit = composedDraft.trim().length > 0;
+  const hasImages = pendingImages.images.length > 0;
+  const canSubmit =
+    (composedDraft.trim().length > 0 || hasImages) &&
+    !pendingImages.isProcessing &&
+    !isSubmitting;
 
-  const submitDraft = () => {
+  const submitDraft = async () => {
+    if (!canSubmit) return;
     const text = composedDraft.trim();
-    if (!text) return;
+
+    if (hasImages) {
+      // Imágenes + texto opcional → un único pensamiento
+      setIsSubmitting(true);
+      pendingImages.dismissError();
+      try {
+        await addImageThinking(pendingImages.readyBlobs, text);
+        pendingImages.clear();
+        setDraft("");
+        if (isDictating) resetSegment();
+      } catch (error) {
+        // La bandeja y el texto se conservan para reintentar
+        pendingImages.setError(
+          error instanceof Error ? error.message : IMAGE_ERRORS.unreadable,
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     handleNewThinking(text);
     setDraft("");
     // Lo que se siga dictando arranca una idea nueva, sin duplicados
     if (isDictating) resetSegment();
+  };
+
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const { images, otherFiles } = extractImageFiles(e.clipboardData);
+    if (images.length > 0) {
+      e.preventDefault();
+      pendingImages.addFiles(images);
+    } else if (otherFiles.length > 0 && !hasClipboardText(e.clipboardData)) {
+      e.preventDefault();
+      pendingImages.setError(IMAGE_ERRORS.notImage);
+    }
+    // Sin archivos: se pega el texto como siempre
   };
 
   // El campo crece con el contenido hasta su altura máxima (CSS); después scrollea
@@ -197,13 +250,13 @@ const ActiveNoteView = () => {
     el.style.height = `${el.scrollHeight}px`;
   }, [composedDraft]);
 
-  const handleDeleteThinking = (thinkingIndex: number) => {
-    updateActiveNote({
-      ...ActiveNote,
-      thinkings:
-        ActiveNote?.thinkings.filter((_, i) => i !== thinkingIndex) || [],
-    });
+  const handleDeleteThinking = (thinkingId: string) => {
+    if (editingId === thinkingId) setEditingId(null);
+    removeThinking(thinkingId);
   };
+
+  const replaceThinking = (thinkingId: string, next: Thinking) =>
+    ActiveNote?.thinkings.map((t) => (t.id === thinkingId ? next : t)) || [];
 
   return (
     <>
@@ -287,19 +340,78 @@ const ActiveNoteView = () => {
 
       <div className="thinking-list">
         <div className="thinkings-container">
-          {ActiveNote?.thinkings.map((thinking, index) => {
-            const segments = matchMap.get(index);
+          {ActiveNote?.thinkings.map((thinking) => {
+            const segments = matchMap.get(thinking.id);
             const hasMatch = !!segments;
+
+            if (!isTextThinking(thinking)) {
+              const isImage = isImageThinking(thinking);
+              return (
+                <div
+                  key={thinking.id}
+                  className={`thinking-text-container${isImage ? " is-image" : ""}${hasMatch ? " thinking-has-match" : ""}`}
+                >
+                  {isImage ? (
+                    <ImageThinkingView
+                      thinking={thinking}
+                      segments={segments}
+                      isEditing={editingId === thinking.id}
+                      onEditDone={(changes) => {
+                        editImageThinking(thinking.id, changes);
+                        setEditingId(null);
+                      }}
+                      onEditCancel={() => setEditingId(null)}
+                    />
+                  ) : (
+                    <span className="thinking-text thinking-unsupported">
+                      Contenido no soportado en esta versión
+                    </span>
+                  )}
+                  <div className="thinking-actions">
+                    {isImage && (
+                      <>
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setEditingId((prev) =>
+                              prev === thinking.id ? null : thinking.id,
+                            );
+                          }}
+                          className="action-btn edit"
+                          title="Editar"
+                          aria-label="Editar idea"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <CopyButton
+                          getText={() => thinkingToPlainText(thinking)}
+                          label="Copiar idea"
+                          size={14}
+                        />
+                      </>
+                    )}
+                    <button
+                      onClick={() => handleDeleteThinking(thinking.id)}
+                      className="action-btn delete"
+                      title="Borrar"
+                      aria-label="Borrar idea"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div
-                key={index}
+                key={thinking.id}
                 className={`thinking-text-container${hasMatch ? " thinking-has-match" : ""}`}
               >
-                {isEditingID === index ? (
+                {editingId === thinking.id ? (
                   <textarea
                     className="thinking-input"
-                    defaultValue={thinking}
+                    defaultValue={thinking.value}
                     autoFocus
                     ref={(el) => {
                       if (el) {
@@ -309,12 +421,12 @@ const ActiveNoteView = () => {
                     }}
                     onBlur={(e) => {
                       handleUpdateActiveNote({
-                        thinkings:
-                          ActiveNote?.thinkings.map((t, i) =>
-                            i === index ? e.target.value : t,
-                          ) || [],
+                        thinkings: replaceThinking(thinking.id, {
+                          ...thinking,
+                          value: e.target.value,
+                        }),
                       });
-                      setIsEditingID(-1);
+                      setEditingId(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -328,7 +440,7 @@ const ActiveNoteView = () => {
                     {segments ? (
                       <HighlightedText segments={segments} />
                     ) : (
-                      thinking
+                      thinking.value
                     )}
                   </span>
                 )}
@@ -338,7 +450,9 @@ const ActiveNoteView = () => {
                   <button
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      setIsEditingID((prev) => (prev === index ? -1 : index));
+                      setEditingId((prev) =>
+                        prev === thinking.id ? null : thinking.id,
+                      );
                     }}
                     className="action-btn edit"
                     title="Editar"
@@ -346,12 +460,12 @@ const ActiveNoteView = () => {
                     <Pencil size={14} />
                   </button>
                   <CopyButton
-                    getText={() => thinking}
+                    getText={() => thinking.value}
                     label="Copiar idea"
                     size={14}
                   />
                   <button
-                    onClick={() => handleDeleteThinking(index)}
+                    onClick={() => handleDeleteThinking(thinking.id)}
                     className="action-btn delete"
                     title="Borrar"
                   >
@@ -366,12 +480,17 @@ const ActiveNoteView = () => {
           Enter para agregar · Shift+Enter salto de línea
         </p>
         <div
-          className="composer"
+          className={`composer${hasImages ? " has-images" : ""}`}
           // Tocar cualquier parte del recuadro enfoca el campo de texto
           onClick={(e) => {
             if (e.target === e.currentTarget) textAreaRef.current?.focus();
           }}
         >
+          <ImagePreviewTray
+            images={pendingImages.images}
+            onRemove={pendingImages.remove}
+            disabled={isSubmitting}
+          />
           <textarea
             ref={textAreaRef}
             rows={1}
@@ -382,9 +501,10 @@ const ActiveNoteView = () => {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                submitDraft();
+                void submitDraft();
               }
             }}
+            onPaste={handlePaste}
             placeholder={
               isDictating && !draft ? "Escuchando…" : "Escribí una idea…"
             }
@@ -406,15 +526,25 @@ const ActiveNoteView = () => {
               type="button"
               className={`composer-send${canSubmit ? "" : " is-empty"}`}
               onMouseDown={(e) => e.preventDefault()}
-              onClick={submitDraft}
+              onClick={() => void submitDraft()}
               aria-disabled={!canSubmit}
+              aria-busy={isSubmitting}
               title="Agregar idea (Enter)"
               aria-label="Agregar idea"
             >
-              <ArrowUp size={18} />
+              {isSubmitting ? (
+                <LoaderCircle size={18} className="loading-icon" />
+              ) : (
+                <ArrowUp size={18} />
+              )}
             </button>
           </div>
         </div>
+        {pendingImages.error && (
+          <p className="dictation-message is-error" role="alert">
+            {pendingImages.error}
+          </p>
+        )}
         {dictationMessage && (
           <p
             className={`dictation-message${dictationMessage.kind === "error" ? " is-error" : ""}`}

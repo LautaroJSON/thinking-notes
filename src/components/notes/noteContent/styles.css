@@ -697,3 +697,317 @@
   margin: 0;
   color: var(--text);
 }
+
+/* ===== Imágenes en los pensamientos ===== */
+
+/* Con imágenes adjuntas, la bandeja ocupa su propia fila arriba del texto */
+.composer.has-images {
+  flex-wrap: wrap;
+  border-radius: 18px;
+}
+
+.image-tray {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 6px -6px;
+  padding: 0;
+  list-style: none;
+}
+
+.image-tray-item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: visible;
+}
+
+.image-tray-item img,
+.image-tray-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  background-color: var(--surface-muted);
+}
+
+.image-tray-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.image-tray-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background-color: var(--surface-floating);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.image-tray-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.image-tray-remove:focus-visible,
+.image-thumb-btn:focus-visible,
+.image-viewer-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .image-tray-remove {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Pensamiento con imágenes */
+.thinking-text-container.is-image {
+  align-items: flex-start;
+}
+
+.image-thinking {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.image-grid {
+  display: grid;
+  gap: 6px;
+  max-width: 480px;
+}
+
+.image-grid.count-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.image-grid.count-2,
+.image-grid.count-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.image-grid.count-3,
+.image-grid.count-5 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.image-grid-item {
+  position: relative;
+  min-width: 0;
+}
+
+.image-thumb-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  cursor: zoom-in;
+}
+
+/* Las imágenes se recortan para que la grilla quede pareja; una sola imagen
+   conserva su proporción con un alto máximo */
+.image-grid-item img,
+.image-thumb-placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  background-color: var(--surface-muted);
+}
+
+.image-grid.count-1 .image-grid-item img {
+  aspect-ratio: auto;
+  max-height: 240px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.image-grid.count-1 .image-thumb-placeholder {
+  aspect-ratio: 4 / 3;
+  max-width: 240px;
+}
+
+.image-thumb-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  box-sizing: border-box;
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.image-thumb-placeholder.is-error {
+  color: var(--text-subtle);
+}
+
+.thinking-unsupported {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.image-thinking-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.image-thinking-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.image-thinking-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.image-thinking-edit-actions button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.image-thinking-edit-actions .btn-secondary {
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.image-thinking-edit-actions .btn-primary {
+  border: 1px solid var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+}
+
+/* Visor ampliado */
+.image-viewer {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+.image-viewer::backdrop {
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.image-viewer[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: dictationFadeIn 0.15s ease-out;
+}
+
+.image-viewer-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+}
+
+.image-viewer-stage img {
+  max-width: 90vw;
+  max-height: 90dvh;
+  object-fit: contain;
+  border-radius: 6px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.image-viewer .image-unavailable {
+  color: #ffffff;
+}
+
+.image-viewer-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.image-viewer-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.image-viewer-close {
+  top: 16px;
+  right: 16px;
+}
+
+.image-viewer-prev {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.image-viewer-next {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.image-viewer-counter {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-viewer[open] {
+    animation: none;
+  }
+}
