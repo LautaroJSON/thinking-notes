@@ -10,6 +10,7 @@ export type SoundId =
   | "enter"
   | "select"
   | "close"
+  | "hover"
   | "noteOpen"
   | "noteClose"
   | "panelOpen"
@@ -46,6 +47,7 @@ export const SOUND_CATEGORY: Record<SoundId, SoundCategoryId> = {
   enter: "typing",
   select: "selection",
   close: "selection",
+  hover: "selection",
   noteOpen: "selection",
   noteClose: "selection",
   panelOpen: "selection",

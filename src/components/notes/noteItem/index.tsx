@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useNotes } from "@/hooks/useNotes";
 import { setLaunchOrigin } from "@/components/utils/noteLaunch";
+import { playSound } from "@/hooks/useSounds";
 import "./styles.css";
 
 // Transición propia del ítem (ver styles.css); se combina con la de dnd-kit
@@ -63,6 +64,11 @@ export const NoteItem = ({
         // El panel de la nota sale desde esta tarjeta (ver noteLaunch.ts)
         setLaunchOrigin(id, e.currentTarget.getBoundingClientRect());
         onDobleClick();
+      }}
+      // Roce muy suave al pasar el mouse. Solo con mouse (en táctil no hay
+      // hover) y sin botones apretados, para no sonar mientras se arrastra.
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse" && e.buttons === 0) playSound("hover");
       }}
       // Mantener apretado en táctil no debe abrir el menú del navegador
       onContextMenu={(e) => e.preventDefault()}

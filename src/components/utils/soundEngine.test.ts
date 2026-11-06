@@ -140,6 +140,21 @@ describe("soundEngine", () => {
     expect(started).toBe(afterFirst * 2);
   });
 
+  it("dos hover a menos de 90 ms suenan una sola vez", async () => {
+    const { unlockAudio, playRecipe } = await loadEngine();
+    unlockAudio();
+    playRecipe("hover");
+    expect(started).toBe(1);
+
+    now += 50;
+    playRecipe("hover");
+    expect(started).toBe(1);
+
+    now += 50;
+    playRecipe("hover");
+    expect(started).toBe(2);
+  });
+
   it("descarta sonidos por encima de 6 voces simultáneas", async () => {
     const { unlockAudio, playRecipe } = await loadEngine();
     unlockAudio();
@@ -184,6 +199,7 @@ describe("soundEngine", () => {
       "enter",
       "select",
       "close",
+      "hover",
       "noteOpen",
       "noteClose",
       "panelOpen",

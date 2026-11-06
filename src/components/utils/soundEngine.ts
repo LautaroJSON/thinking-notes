@@ -23,6 +23,8 @@ const MAX_VOICES = 6;
 // corta y suena distinto. 15 ms no se perciben como demora.
 const SCHEDULE_AHEAD_S = 0.015;
 const TYPING_SOUNDS: ReadonlySet<SoundId> = new Set(["key", "delete", "enter"]);
+// Pasar el mouse rápido por la lista no debe sonar como una ráfaga
+const HOVER_MIN_INTERVAL_MS = 90;
 
 let ctx: AudioContext | null = null;
 let categoryOut: Record<SoundCategoryId, GainNode> | null = null;
@@ -30,6 +32,7 @@ let noiseBuffer: AudioBuffer | null = null;
 // Momento (en el reloj de audio) en que termina cada voz que está sonando
 let voiceEnds: number[] = [];
 let lastTypingAt = -Infinity;
+let lastHoverAt = -Infinity;
 
 // Variación aleatoria de ±amount, para que las teclas no suenen idénticas
 const jitter = (value: number, amount: number) =>
@@ -169,6 +172,16 @@ const RECIPES: Record<SoundId, Recipe> = {
       dur: 0.06,
       gain: 0.4,
       attack: 0.008,
+    }),
+
+  // Pasar el mouse sobre una nota: el roce más leve de un dedo sobre papel
+  hover: (a, o, t) =>
+    noise(a, o, t, {
+      freq: jitter(2400, 0.08),
+      q: 1.1,
+      dur: 0.03,
+      gain: 0.05,
+      attack: 0.006,
     }),
 
   // Abrir una nota: una hoja que se levanta, roce que sube con un crujido
@@ -366,6 +379,11 @@ export const playRecipe = (id: SoundId) => {
       const now = performance.now();
       if (now - lastTypingAt < TYPING_MIN_INTERVAL_MS) return;
       lastTypingAt = now;
+    }
+    if (id === "hover") {
+      const now = performance.now();
+      if (now - lastHoverAt < HOVER_MIN_INTERVAL_MS) return;
+      lastHoverAt = now;
     }
 
     const audioNow = ctx.currentTime;
