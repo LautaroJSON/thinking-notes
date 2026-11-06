@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEY } from "@/components/utils";
 import ActiveNoteView from "@/components/notes/noteContent/components/activeNoteView";
 import { useNotes } from "@/hooks/useNotes";
+import { __resetPendingImagesForTests } from "@/hooks/usePendingImages";
 import { NotesProvider } from "./notesContext";
 
 const { getSession, onAuthStateChange } = vi.hoisted(() => ({
@@ -811,9 +812,52 @@ describe("NotesProvider", () => {
     });
 
     afterEach(() => {
+      __resetPendingImagesForTests();
       vi.unstubAllGlobals();
       compressImage.mockReset();
       localStore.save.mockReset();
+    });
+
+    it("las imágenes sin enviar se conservan al cambiar de nota y volver", async () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([SAVED_NOTE, { id: "n2", title: "Otra", thinkings: [] }]),
+      );
+      const Switcher = () => {
+        const { setActiveNote, closeActiveNote, activeNoteState } = useNotes();
+        return (
+          <>
+            <button onClick={() => setActiveNote("n1")}>nota 1</button>
+            <button onClick={() => setActiveNote("n2")}>nota 2</button>
+            <button onClick={closeActiveNote}>cerrar</button>
+            {activeNoteState && <ActiveNoteView />}
+          </>
+        );
+      };
+      render(
+        <NotesProvider>
+          <Switcher />
+        </NotesProvider>,
+      );
+      await flush();
+      fireEvent.click(screen.getByText("nota 1"));
+      const input = screen.getByLabelText("Nueva idea");
+      fireEvent.change(input, { target: { value: "borrador" } });
+      fireEvent.paste(input, { clipboardData: clipboard([png("a")]) });
+      await flush();
+      expect(screen.getByLabelText("Quitar imagen 1")).toBeTruthy();
+
+      fireEvent.click(screen.getByText("nota 2"));
+      expect(screen.queryByLabelText("Quitar imagen 1")).toBeNull();
+
+      fireEvent.click(screen.getByText("nota 1"));
+      expect(screen.getByLabelText("Quitar imagen 1")).toBeTruthy();
+      expect(screen.getByDisplayValue("borrador")).toBeTruthy();
+
+      // También al cerrar la nota y volver a abrirla
+      fireEvent.click(screen.getByText("cerrar"));
+      fireEvent.click(screen.getByText("nota 1"));
+      expect(screen.getByLabelText("Quitar imagen 1")).toBeTruthy();
     });
 
     it("muestra la vista previa y al enviar crea un pensamiento con imágenes y texto", async () => {

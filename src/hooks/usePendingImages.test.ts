@@ -13,7 +13,11 @@ import {
   IMAGE_ERRORS,
   ImageProcessingError,
 } from "@/components/utils/imageProcessing";
-import { usePendingImages } from "./usePendingImages";
+import {
+  __resetPendingImagesForTests,
+  discardPendingImages,
+  usePendingImages,
+} from "./usePendingImages";
 
 const file = (name: string) => new File(["x"], name, { type: "image/png" });
 
@@ -38,12 +42,13 @@ describe("usePendingImages", () => {
   });
 
   afterEach(() => {
+    __resetPendingImagesForTests();
     vi.unstubAllGlobals();
     compressImage.mockReset();
   });
 
   it("agrega las imágenes comprimidas en el orden pegado", async () => {
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
 
     act(() => result.current.addFiles([file("a"), file("b")]));
     expect(result.current.isProcessing).toBe(true);
@@ -65,7 +70,7 @@ describe("usePendingImages", () => {
   });
 
   it("respeta el máximo de 5 y avisa al superarlo", async () => {
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
 
     act(() => result.current.addFiles(["1", "2", "3", "4"].map(file)));
     act(() => result.current.addFiles([file("5"), file("6")]));
@@ -79,7 +84,7 @@ describe("usePendingImages", () => {
   });
 
   it("quita una sola imagen y revoca su URL", async () => {
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
     act(() => result.current.addFiles([file("a"), file("b")]));
     await settle();
     const [first] = result.current.images;
@@ -91,7 +96,7 @@ describe("usePendingImages", () => {
   });
 
   it("clear vacía la bandeja y revoca todas las URLs", async () => {
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
     act(() => result.current.addFiles([file("a"), file("b")]));
     await settle();
 
@@ -111,7 +116,7 @@ describe("usePendingImages", () => {
       }
       return { blob: new Blob([f.name]), width: 1, height: 1 };
     });
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
 
     act(() => result.current.addFiles([file("a"), file("grande")]));
     await settle();
@@ -128,7 +133,7 @@ describe("usePendingImages", () => {
           finish = () => resolve({ blob: new Blob(["x"]), width: 1, height: 1 });
         }),
     );
-    const { result } = renderHook(() => usePendingImages());
+    const { result } = renderHook(() => usePendingImages("n1"));
 
     act(() => result.current.addFiles([file("a")]));
     act(() => result.current.clear());
@@ -139,13 +144,72 @@ describe("usePendingImages", () => {
     expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 
-  it("revoca las URLs al desmontar", async () => {
-    const { result, unmount } = renderHook(() => usePendingImages());
+  it("conserva las imágenes de cada nota al cambiar de nota y al desmontar", async () => {
+    const { result, rerender, unmount } = renderHook(
+      ({ noteId }) => usePendingImages(noteId),
+      { initialProps: { noteId: "n1" } },
+    );
     act(() => result.current.addFiles([file("a")]));
     await settle();
 
-    unmount();
+    rerender({ noteId: "n2" });
+    expect(result.current.images).toEqual([]);
+    act(() => result.current.addFiles([file("b"), file("c")]));
+    await settle();
+    expect(result.current.images).toHaveLength(2);
 
+    rerender({ noteId: "n1" });
+    expect(result.current.images.map((i) => i.previewUrl)).toEqual(["blob:1"]);
+
+    // Cerrar la nota (desmontar) no las descarta ni revoca sus URLs
+    unmount();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    const { result: reopened } = renderHook(() => usePendingImages("n1"));
+    expect(reopened.current.images).toHaveLength(1);
+  });
+
+  it("una compresión en curso termina en la nota donde se pegó", async () => {
+    let finish!: () => void;
+    compressImage.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () =>
+            resolve({ blob: new Blob(["x"]), width: 1, height: 1 });
+        }),
+    );
+    const { result, rerender } = renderHook(
+      ({ noteId }) => usePendingImages(noteId),
+      { initialProps: { noteId: "n1" } },
+    );
+
+    act(() => result.current.addFiles([file("a")]));
+    rerender({ noteId: "n2" });
+    finish();
+    await settle();
+
+    expect(result.current.images).toEqual([]);
+    rerender({ noteId: "n1" });
+    expect(result.current.images[0].status).toBe("ready");
+  });
+
+  it("el error se muestra solo en la nota donde ocurrió", () => {
+    const { result, rerender } = renderHook(
+      ({ noteId }) => usePendingImages(noteId),
+      { initialProps: { noteId: "n1" } },
+    );
+    act(() => result.current.setError("falló"));
+    rerender({ noteId: "n2" });
+    expect(result.current.error).toBeNull();
+  });
+
+  it("discardPendingImages descarta las de una nota y revoca sus URLs", async () => {
+    const { result } = renderHook(() => usePendingImages("n1"));
+    act(() => result.current.addFiles([file("a")]));
+    await settle();
+
+    act(() => discardPendingImages("n1"));
+
+    expect(result.current.images).toEqual([]);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:1");
   });
 });

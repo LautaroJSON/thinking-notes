@@ -37,6 +37,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
 import { clearDraft } from "@/components/utils/drafts";
+import { discardPendingImages } from "@/hooks/usePendingImages";
 import { applyOrder, moveNote } from "@/components/utils/reorder";
 import { NotesContext } from "./notes-context";
 
@@ -226,9 +227,12 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
    * ellas (y el texto, si hay). Si alguna falla, la nota no cambia, se borran
    * las que sí se guardaron y se lanza un ImageStoreError con el mensaje.
    */
-  const addImageThinking = async (blobs: Blob[], text: string) => {
+  const addImageThinking = async (
+    blobs: Blob[],
+    text: string,
+  ): Promise<boolean> => {
     const note = latestStateRef.current.activeNoteState;
-    if (!note?.id || blobs.length === 0) return;
+    if (!note?.id || blobs.length === 0) return false;
     const noteId = note.id;
     const store = storeForMode(latestStateRef.current.isLogged);
 
@@ -253,13 +257,14 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Si mientras tanto se cambió de nota, no se agrega a otra: los
-      // archivos se descartan para no dejar huérfanos
+      // archivos se descartan (sin huérfanos) y las imágenes siguen
+      // pendientes en su nota para volver a enviarlas
       if (latestStateRef.current.activeNoteState?.id !== noteId) {
-        console.warn("Se cambió de nota durante la subida; se descartan.");
+        console.warn("Se cambió de nota durante la subida; no se agregan.");
         enqueueImageDeletions(saved);
         setCleanupRequest((n) => n + 1);
         setLoadingSaveNote(false);
-        return;
+        return false;
       }
 
       const thinking = createImageThinking(saved, text);
@@ -269,6 +274,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
           : prev,
       );
       flushSave();
+      return true;
     } catch (error) {
       setLoadingSaveNote(false);
       throw toImageStoreError(error);
@@ -403,6 +409,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
           );
         // todo: agregar estado "deletingNote" para mostrar indicador de carga en la nota que se está eliminando
         clearDraft(deletedNoteIdbyAPI.id);
+        discardPendingImages(deletedNoteIdbyAPI.id);
         setNotes((prevNotes) => {
           const newArrayNote = prevNotes.filter(
             (note) => note.id !== deletedNoteIdbyAPI.id,
@@ -419,6 +426,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       }
     } else if (isLogged === "offline") {
       clearDraft(id);
+      discardPendingImages(id);
       setNotes((prevNotes) => {
         const newArrayNote = prevNotes.filter((note) => note.id !== id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newArrayNote));

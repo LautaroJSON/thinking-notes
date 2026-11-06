@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { MAX_IMAGES_PER_THINKING } from "@/types/thinking";
 import {
@@ -16,99 +16,136 @@ export interface PendingImage {
   height?: number;
 }
 
+// Imágenes pegadas sin enviar, por nota. Viven fuera del componente (como el
+// borrador de texto) para que no se pierdan al cambiar de nota o al cerrarla y
+// volver a abrirla. Se descartan al enviarlas, quitarlas o borrar la nota.
+// No sobreviven a recargar la página.
+const EMPTY: PendingImage[] = [];
+const drafts = new Map<string, PendingImage[]>();
+const listeners = new Set<() => void>();
+
+const getImages = (noteId: string) => drafts.get(noteId) ?? EMPTY;
+
+const setImages = (
+  noteId: string,
+  update: (prev: PendingImage[]) => PendingImage[],
+) => {
+  const next = update(getImages(noteId));
+  if (next.length === 0) drafts.delete(noteId);
+  else drafts.set(noteId, next);
+  listeners.forEach((listener) => listener());
+};
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+const revoke = (images: PendingImage[]) =>
+  images.forEach((img) => img.previewUrl && URL.revokeObjectURL(img.previewUrl));
+
+/** Descarta las imágenes sin enviar de una nota (p. ej. al borrarla). */
+export const discardPendingImages = (noteId: string) => {
+  revoke(getImages(noteId));
+  setImages(noteId, () => EMPTY);
+};
+
+/** Solo para tests. */
+export const __resetPendingImagesForTests = () => {
+  [...drafts.keys()].forEach(discardPendingImages);
+};
+
 /**
- * Bandeja de imágenes pegadas que todavía no se enviaron. Comprime al pegar
- * (para mostrar errores en el momento y previsualizar exactamente lo que se
- * guarda), respeta el máximo por pensamiento y libera las object URLs.
+ * Bandeja de imágenes pegadas que todavía no se enviaron en la nota `noteId`.
+ * Comprime al pegar (para mostrar errores en el momento y previsualizar lo
+ * que se guarda) y respeta el máximo de imágenes por pensamiento.
  */
-export const usePendingImages = () => {
-  const [images, setImages] = useState<PendingImage[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  // Ids vigentes: si se quitó o se vació la bandeja mientras se comprimía,
-  // el resultado se descarta
-  const activeIds = useRef(new Set<string>());
-  const urls = useRef(new Map<string, string>());
-  const count = useRef(0);
+export const usePendingImages = (noteId: string | undefined) => {
+  const key = noteId ?? "";
+  const images = useSyncExternalStore(
+    subscribe,
+    () => getImages(key),
+    () => getImages(key),
+  );
+  // El error se muestra solo en la nota donde ocurrió
+  const [errorState, setErrorState] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
+  const error = errorState?.key === key ? errorState.message : null;
 
-  const revoke = (localId: string) => {
-    const url = urls.current.get(localId);
-    if (url) URL.revokeObjectURL(url);
-    urls.current.delete(localId);
-  };
+  const setError = useCallback(
+    (message: string | null) =>
+      setErrorState(message ? { key, message } : null),
+    [key],
+  );
 
-  const addFiles = useCallback((files: File[]) => {
-    if (files.length === 0) return;
-    const slots = MAX_IMAGES_PER_THINKING - count.current;
-    const accepted = files.slice(0, Math.max(0, slots));
-    setError(files.length > accepted.length ? IMAGE_ERRORS.tooMany : null);
-    if (accepted.length === 0) return;
+  const addFiles = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) return;
+      const slots = MAX_IMAGES_PER_THINKING - getImages(key).length;
+      const accepted = files.slice(0, Math.max(0, slots));
+      setError(files.length > accepted.length ? IMAGE_ERRORS.tooMany : null);
+      if (accepted.length === 0) return;
 
-    const entries = accepted.map((file) => ({ file, localId: uuidv4() }));
-    count.current += entries.length;
-    entries.forEach(({ localId }) => activeIds.current.add(localId));
-    setImages((prev) => [
-      ...prev,
-      ...entries.map(({ localId }) => ({
-        localId,
-        status: "processing" as const,
-      })),
-    ]);
+      const entries = accepted.map((file) => ({ file, localId: uuidv4() }));
+      setImages(key, (prev) => [
+        ...prev,
+        ...entries.map(({ localId }) => ({
+          localId,
+          status: "processing" as const,
+        })),
+      ]);
 
-    entries.forEach(async ({ file, localId }) => {
-      try {
-        const { blob, width, height } = await compressImage(file);
-        if (!activeIds.current.has(localId)) return;
-        const previewUrl = URL.createObjectURL(blob);
-        urls.current.set(localId, previewUrl);
-        setImages((prev) =>
-          prev.map((img) =>
-            img.localId === localId
-              ? { localId, status: "ready", blob, previewUrl, width, height }
-              : img,
-          ),
-        );
-      } catch (err) {
-        if (!activeIds.current.has(localId)) return;
-        activeIds.current.delete(localId);
-        count.current -= 1;
-        setImages((prev) => prev.filter((img) => img.localId !== localId));
-        setError(
-          err instanceof ImageProcessingError
-            ? err.message
-            : IMAGE_ERRORS.unreadable,
-        );
-      }
-    });
-  }, []);
+      // La compresión termina en la nota donde se pegó, aunque mientras
+      // tanto se haya cambiado de nota
+      entries.forEach(async ({ file, localId }) => {
+        const isStillPending = () =>
+          getImages(key).some((img) => img.localId === localId);
+        try {
+          const { blob, width, height } = await compressImage(file);
+          if (!isStillPending()) return;
+          const previewUrl = URL.createObjectURL(blob);
+          setImages(key, (prev) =>
+            prev.map((img) =>
+              img.localId === localId
+                ? { localId, status: "ready", blob, previewUrl, width, height }
+                : img,
+            ),
+          );
+        } catch (err) {
+          if (!isStillPending()) return;
+          setImages(key, (prev) =>
+            prev.filter((img) => img.localId !== localId),
+          );
+          setErrorState({
+            key,
+            message:
+              err instanceof ImageProcessingError
+                ? err.message
+                : IMAGE_ERRORS.unreadable,
+          });
+        }
+      });
+    },
+    [key, setError],
+  );
 
-  const remove = useCallback((localId: string) => {
-    if (!activeIds.current.delete(localId)) return;
-    count.current -= 1;
-    revoke(localId);
-    setImages((prev) => prev.filter((img) => img.localId !== localId));
-    setError(null);
-  }, []);
+  const remove = useCallback(
+    (localId: string) => {
+      revoke(getImages(key).filter((img) => img.localId === localId));
+      setImages(key, (prev) => prev.filter((img) => img.localId !== localId));
+      setErrorState(null);
+    },
+    [key],
+  );
 
   const clear = useCallback(() => {
-    activeIds.current.clear();
-    count.current = 0;
-    [...urls.current.keys()].forEach(revoke);
-    setImages([]);
-    setError(null);
-  }, []);
+    discardPendingImages(key);
+    setErrorState(null);
+  }, [key]);
 
-  const dismissError = useCallback(() => setError(null), []);
-
-  // Al desmontar se liberan las URLs de vista previa
-  useEffect(() => {
-    const currentUrls = urls.current;
-    const currentIds = activeIds.current;
-    return () => {
-      currentIds.clear();
-      currentUrls.forEach((url) => URL.revokeObjectURL(url));
-      currentUrls.clear();
-    };
-  }, []);
+  const dismissError = useCallback(() => setErrorState(null), []);
 
   const isProcessing = images.some((img) => img.status === "processing");
   const readyBlobs = images.flatMap((img) => (img.blob ? [img.blob] : []));

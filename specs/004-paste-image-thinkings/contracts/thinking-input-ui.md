@@ -14,7 +14,7 @@ español.
 | Botón de enviar | Habilitado si hay texto o al menos 1 imagen y no hay una subida en curso. |
 | Enter / enviar | Crea un único pensamiento con las imágenes y el texto (si lo hay). Durante la subida, el botón muestra un spinner y se deshabilita. |
 | Error de subida | Mensaje en línea `role="alert"`. La bandeja y el texto se conservan. |
-| Cambiar de nota | La bandeja se vacía y se revocan sus object URLs. |
+| Cambiar de nota | Cada nota conserva su bandeja (como el borrador de texto); al volver, las imágenes siguen ahí. Al borrar la nota se descartan y se revocan sus object URLs. |
 
 Dictado: sigue igual; el texto dictado va como texto acompañante si hay imágenes.
 

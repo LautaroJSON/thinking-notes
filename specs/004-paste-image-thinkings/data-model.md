@@ -71,7 +71,7 @@ Cada archivo pertenece a un solo `ImageThinking` y un pensamiento tiene de 1 a 5
 
 `{ localId: string; blob: Blob; previewUrl: string; width: number; height: number }`.
 Vive en el estado del input. `previewUrl` es un object URL que se revoca al quitar la
-imagen, al confirmar o al desmontar el componente. No se persiste (spec, Assumptions).
+imagen, al confirmar o al borrar la nota. Se guarda en memoria por nota (fuera del componente), así sobrevive al cambio de nota; no se persiste y se pierde al recargar (spec, Assumptions).
 
 ## Ciclos de vida
 

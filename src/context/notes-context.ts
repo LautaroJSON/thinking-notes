@@ -28,9 +28,10 @@ export interface NotesContextType {
   clearReorderError: () => void;
   /**
    * Guarda las imágenes y agrega a la nota activa un pensamiento con ellas y
-   * el texto. Rechaza con un ImageStoreError (mensaje listo para mostrar).
+   * el texto. Devuelve false si no se agregó (se cambió de nota durante la
+   * subida). Rechaza con un ImageStoreError (mensaje listo para mostrar).
    */
-  addImageThinking: (blobs: Blob[], text: string) => Promise<void>;
+  addImageThinking: (blobs: Blob[], text: string) => Promise<boolean>;
   /** Quita imágenes y/o cambia el texto de un pensamiento con imágenes. */
   editImageThinking: (
     thinkingId: string,

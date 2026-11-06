@@ -81,14 +81,9 @@ const ActiveNoteView = () => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedActiveNote = useDebounce(editedNote, 2000);
-  const pendingImages = usePendingImages();
-  const { clear: clearPendingImages } = pendingImages;
+  // Imágenes sin enviar: cada nota tiene las suyas, como el borrador de texto
+  const pendingImages = usePendingImages(activeNoteId);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Las imágenes sin enviar no pasan a otra nota
-  useEffect(() => {
-    clearPendingImages();
-  }, [activeNoteId, clearPendingImages]);
 
   const { query, setQuery, matchCount, matchMap } = useNoteSearch(
     ActiveNote ?? null,
@@ -209,10 +204,12 @@ const ActiveNoteView = () => {
       setIsSubmitting(true);
       pendingImages.dismissError();
       try {
-        await addImageThinking(pendingImages.readyBlobs, text);
-        pendingImages.clear();
-        setDraft("");
-        if (isDictating) resetSegment();
+        const added = await addImageThinking(pendingImages.readyBlobs, text);
+        if (added) {
+          pendingImages.clear();
+          setDraft("");
+          if (isDictating) resetSegment();
+        }
       } catch (error) {
         // La bandeja y el texto se conservan para reintentar
         pendingImages.setError(

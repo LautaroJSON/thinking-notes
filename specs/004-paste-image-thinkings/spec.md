@@ -17,6 +17,7 @@
 - Q: Si el usuario pega varias imágenes antes de enviar, ¿se guardan como un solo pensamiento o uno por imagen? → A: Como en la app de escritorio de Claude: se pueden pegar varias imágenes, se ven todas en la vista previa y se guardan juntas (con el texto, si hay) en un único pensamiento; límite de 5 imágenes por pensamiento.
 - Q: Después de guardar un pensamiento con imágenes, ¿se le pueden agregar o quitar imágenes al editarlo? → A: Al editar se pueden quitar imágenes de a una, pero no agregar nuevas; si se quitan todas y no hay texto, se borra el pensamiento.
 - Q: ¿La API nueva debe aceptar el formato anterior (lista de textos) enviado por versiones viejas de la app? → A: No: todavía no hay usuarios reales, así que no hace falta compatibilidad con versiones viejas; la API y la app usan solo el formato nuevo.
+- Q: (después de la implementación) ¿Qué pasa con las imágenes sin enviar al cambiar de nota? → A: Se conservan por nota, como el borrador de texto, mientras la app está abierta.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -138,7 +139,7 @@ Como usuario, quiero exportar a PDF una nota que tiene imágenes y que las imág
 - **Imagen con transparencia**: se conserva la transparencia.
 - **Sin espacio en el navegador** (modo sin sesión): se muestra un error claro, la imagen queda en la vista previa y no se crea el pensamiento.
 - **Sin conexión con sesión iniciada**: la subida falla con un mensaje claro; la imagen queda en la vista previa para reintentar.
-- **Cambiar de nota o cerrar la app con una imagen en vista previa**: la vista previa se descarta sin guardar nada (no se persiste como borrador).
+- **Cambiar de nota con imágenes en vista previa**: como el borrador de texto, cada nota conserva sus imágenes sin enviar; al volver a la nota (o cerrarla y reabrirla) siguen en la vista previa. Se descartan al enviarlas, al quitarlas o al borrar la nota. Al recargar la página o cerrar la app se pierden, sin dejar archivos guardados.
 - **Cerrar sesión**: las imágenes locales (sin sesión) quedan en el navegador asociadas a las notas locales, igual que hoy pasa con las notas.
 - **Editar un pensamiento con imágenes**: el texto acompañante se puede agregar, editar o vaciar igual que un pensamiento de texto (si se vacía, queda como pensamiento de solo imágenes). En modo edición, cada imagen tiene un botón para quitarla; no se pueden agregar imágenes nuevas ni reemplazarlas. Si se quitan todas las imágenes y queda texto, el pensamiento pasa a ser de solo texto; si se quitan todas y no hay texto, el pensamiento se borra.
 - **Cancelar la edición**: si el usuario cancela la edición, las imágenes que había marcado para quitar vuelven a aparecer y ningún archivo se elimina.
@@ -239,7 +240,7 @@ El cambio afecta a la app y a la API propia; el contrato conceptual es:
 
 - Los pensamientos de imagen se agregan siempre al final de la nota y su posición queda fija, igual que los de texto: los pensamientos no se reordenan.
 - Límites por defecto elegidos: hasta 5 imágenes por pensamiento, 20 MB máximo de imagen original, 2 MB máximo después de comprimir, 1600 px en el lado más largo.
-- La vista previa no se persiste como borrador: si el usuario cambia de nota o recarga con imágenes sin confirmar, se descartan.
+- Las imágenes en vista previa se conservan por nota mientras la app está abierta (al cambiar de nota y volver), pero no se persisten: al recargar se pierden.
 - El usuario sube imágenes solo en pensamientos nuevos; a un pensamiento existente no se le pueden agregar ni reemplazar imágenes (solo quitar), y un pensamiento de solo texto no puede pasar a tener imágenes.
 - No hay un tope de imágenes por nota más allá del espacio disponible (cuota del navegador sin sesión, cuota del proyecto en la nube con sesión).
 - Los pensamientos de texto existentes conservan su comportamiento actual (edición, copia, búsqueda).
