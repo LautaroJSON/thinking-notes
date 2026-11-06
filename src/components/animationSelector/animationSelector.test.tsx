@@ -28,29 +28,31 @@ describe("AnimationSelector", () => {
     localStorage.clear();
   });
 
-  it("muestra las tres animaciones con la de la tarjeta elegida por defecto", () => {
+  it("muestra las tres animaciones con deslizar elegida por defecto", () => {
     render(<AnimationSelector />);
     openMenu();
 
-    expect(option("Desde la tarjeta").getAttribute("aria-checked")).toBe(
-      "true",
-    );
+    expect(option("Deslizar").getAttribute("aria-checked")).toBe("true");
     expect(option("Hundirse").getAttribute("aria-checked")).toBe("false");
-    expect(option("Deslizar").getAttribute("aria-checked")).toBe("false");
-    expect(document.activeElement).toBe(option("Desde la tarjeta"));
+    expect(option("Desde la tarjeta").getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    expect(document.activeElement).toBe(option("Deslizar"));
   });
 
   it("elegir una animación la guarda y cierra el menú", () => {
     render(<AnimationSelector />);
     openMenu();
 
-    fireEvent.click(option("Deslizar"));
+    fireEvent.click(option("Desde la tarjeta"));
 
     expect(screen.queryByRole("menu")).toBeNull();
-    expect(localStorage.getItem(NOTE_ANIMATION_STORAGE_KEY)).toBe("slide");
+    expect(localStorage.getItem(NOTE_ANIMATION_STORAGE_KEY)).toBe("card");
 
     openMenu();
-    expect(option("Deslizar").getAttribute("aria-checked")).toBe("true");
+    expect(option("Desde la tarjeta").getAttribute("aria-checked")).toBe(
+      "true",
+    );
   });
 
   it("recuerda la animación guardada", () => {

@@ -13,7 +13,7 @@ export interface NoteAnimationOption {
   description: string;
 }
 
-export const DEFAULT_NOTE_ANIMATION: NoteAnimationId = "card";
+export const DEFAULT_NOTE_ANIMATION: NoteAnimationId = "slide";
 
 export const NOTE_ANIMATIONS: readonly NoteAnimationOption[] = [
   {

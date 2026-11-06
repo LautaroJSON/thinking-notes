@@ -11,9 +11,9 @@ describe("preferencia de animación de las notas", () => {
     localStorage.clear();
   });
 
-  it("usa «desde la tarjeta» si no hay nada guardado", () => {
+  it("usa «deslizar» si no hay nada guardado", () => {
     expect(loadNoteAnimation()).toBe(DEFAULT_NOTE_ANIMATION);
-    expect(DEFAULT_NOTE_ANIMATION).toBe("card");
+    expect(DEFAULT_NOTE_ANIMATION).toBe("slide");
   });
 
   it("guarda y recupera la elección", () => {
@@ -27,8 +27,8 @@ describe("preferencia de animación de las notas", () => {
   });
 
   it("la de por defecto no ocupa lugar en localStorage", () => {
-    saveNoteAnimation("slide");
     saveNoteAnimation("card");
+    saveNoteAnimation("slide");
     expect(localStorage.getItem(NOTE_ANIMATION_STORAGE_KEY)).toBeNull();
   });
 });
