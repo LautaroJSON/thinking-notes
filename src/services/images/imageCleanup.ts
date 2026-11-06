@@ -1,6 +1,6 @@
 import type { INotes } from "@/types";
 import { getImageRefs, isLocalRef, type ImageRef } from "@/types/thinking";
-import { resolveImageStore } from "./imageStore";
+import { forgetImageUrl, resolveImageStore } from "./imageStore";
 import { localImageStore } from "./localImageStore";
 import { remoteImageStore } from "./remoteImageStore";
 
@@ -73,6 +73,7 @@ export const processImageDeletionQueue = (
       if (!isLocalRef(ref) && !online) continue;
       try {
         await resolveImageStore(ref).remove([ref]);
+        forgetImageUrl(ref);
         done.add(ref);
       } catch (error) {
         console.error("No se pudo borrar la imagen, se reintentará:", error);

@@ -67,6 +67,7 @@ vi.mock("@/services/images/remoteImageStore", () => ({
 
 import * as service from "../services/service";
 import { ImageStoreError } from "@/services/images/errors";
+import { __resetPrimedUrlsForTests } from "@/services/images/imageStore";
 import {
   getPendingImageDeletions,
   QUEUE_KEY,
@@ -149,6 +150,7 @@ describe("NotesProvider", () => {
     cleanup();
     vi.useRealTimers();
     localStorage.clear();
+    __resetPrimedUrlsForTests();
   });
 
   it("mantiene estable la identidad de saveUpdatesNotesOnDBorLocalStorage", async () => {
@@ -887,6 +889,14 @@ describe("NotesProvider", () => {
       expect(screen.queryByLabelText("Quitar imagen 1")).toBeNull();
       const thumb = screen.getByLabelText("Ver imagen 1 de 2");
       const caption = screen.getByText("captura");
+      // Se reutiliza el blob de la vista previa: no hace falta pedir la URL
+      const img = thumb.querySelector("img")!;
+      expect(img.getAttribute("src")).toBe("blob:preview");
+      // El placeholder ocupa el lugar hasta que la imagen termina de cargar
+      expect(thumb.querySelector(".image-thumb-placeholder")).toBeTruthy();
+      fireEvent.load(img);
+      expect(thumb.querySelector(".image-thumb-placeholder")).toBeNull();
+      expect(thumb.querySelector(".image-thumb-frame.is-loaded")).toBeTruthy();
       // Primero el texto y después las imágenes
       expect(
         caption.compareDocumentPosition(thumb) &

@@ -20,6 +20,31 @@ export const resolveImageStore = (ref: ImageRef): ImageStore =>
 export const storeForMode = (isLogged: IsLoggedType): ImageStore =>
   isLogged === "online" ? remoteImageStore : localImageStore;
 
+// URLs de imágenes recién enviadas, creadas a partir del mismo blob de la
+// vista previa: así la miniatura aparece al instante, sin esperar a pedir la
+// URL (firmada o de IndexedDB) ni a descargar la imagen.
+const primedUrls = new Map<ImageRef, string>();
+
+export const primeImageUrl = (ref: ImageRef, blob: Blob) => {
+  if (!primedUrls.has(ref)) primedUrls.set(ref, URL.createObjectURL(blob));
+};
+
+/** URL ya disponible en memoria para la referencia, si la hay. */
+export const peekImageUrl = (ref: ImageRef): string | undefined =>
+  primedUrls.get(ref);
+
+/** Libera la URL en memoria de una imagen borrada. */
+export const forgetImageUrl = (ref: ImageRef) => {
+  const url = primedUrls.get(ref);
+  if (url) URL.revokeObjectURL(url);
+  primedUrls.delete(ref);
+};
+
+/** Solo para tests. */
+export const __resetPrimedUrlsForTests = () => {
+  [...primedUrls.keys()].forEach(forgetImageUrl);
+};
+
 const urlsOrEmpty = async (
   store: ImageStore,
   refs: ImageRef[],
@@ -41,14 +66,19 @@ const urlsOrEmpty = async (
 export const getImageUrls = async (
   refs: ImageRef[],
 ): Promise<Map<ImageRef, string>> => {
+  const primed = refs.flatMap((ref) => {
+    const url = primedUrls.get(ref);
+    return url ? [[ref, url] as const] : [];
+  });
+  const pending = refs.filter((ref) => !primedUrls.has(ref));
   const [localUrls, remoteUrls] = await Promise.all([
-    urlsOrEmpty(localImageStore, refs.filter(isLocalRef)),
+    urlsOrEmpty(localImageStore, pending.filter(isLocalRef)),
     urlsOrEmpty(
       remoteImageStore,
-      refs.filter((ref) => !isLocalRef(ref)),
+      pending.filter((ref) => !isLocalRef(ref)),
     ),
   ]);
-  return new Map([...localUrls, ...remoteUrls]);
+  return new Map([...primed, ...localUrls, ...remoteUrls]);
 };
 
 /** Fuerza a pedir de nuevo la URL (p. ej. si una URL firmada venció). */

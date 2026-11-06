@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ImageRef } from "@/types/thinking";
-import { getImageUrls, invalidateImageUrl } from "@/services/images/imageStore";
+import {
+  getImageUrls,
+  invalidateImageUrl,
+  peekImageUrl,
+} from "@/services/images/imageStore";
 
 export interface ImageUrlState {
   status: "loading" | "ready" | "error";
@@ -35,6 +39,9 @@ export const useImageUrls = (refs: ImageRef[]) => {
 
   const getState = useCallback(
     (ref: ImageRef): ImageUrlState => {
+      // Imagen recién enviada: su URL ya está en memoria
+      const primed = peekImageUrl(ref);
+      if (primed) return { status: "ready", url: primed };
       // Mientras no llegue la respuesta para estas refs, se muestran cargando
       if (resolved?.key !== key) return { status: "loading" };
       const url = resolved.urls.get(ref);

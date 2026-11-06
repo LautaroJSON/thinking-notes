@@ -875,6 +875,46 @@
   color: var(--text-subtle);
 }
 
+/* Miniatura: el placeholder ocupa el lugar hasta que la imagen carga; la
+   imagen se descarga invisible encima y aparece con un fundido */
+.image-thumb-frame {
+  position: relative;
+  display: block;
+}
+
+.image-thumb-frame:not(.is-loaded) img {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.image-thumb-frame.is-loaded img {
+  animation: thumbFadeIn 0.2s ease-out;
+}
+
+/* El spinner aparece solo si la carga tarda: en cargas rápidas no parpadea */
+.image-thumb-placeholder .loading-icon {
+  opacity: 0;
+  animation:
+    spin 1s linear infinite,
+    thumbFadeIn 0.2s ease-out 0.3s forwards;
+}
+
+@keyframes thumbFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-thumb-frame.is-loaded img {
+    animation: none;
+  }
+}
+
 .thinking-unsupported {
   font-style: italic;
   color: var(--text-muted);

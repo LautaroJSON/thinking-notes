@@ -18,7 +18,9 @@ interface ThumbProps {
   onLoad?: () => void;
 }
 
-// Una miniatura con sus estados: cargando, lista o no disponible
+// Una miniatura con sus estados: cargando, lista o no disponible. Mientras
+// la imagen se descarga se mantiene el placeholder (ocupa el mismo lugar) y
+// recién al cargar se muestra la imagen, para que no "salte" ni parpadee.
 const ImageThumb = ({
   imageRef,
   state,
@@ -28,19 +30,9 @@ const ImageThumb = ({
 }: ThumbProps) => {
   const [failed, setFailed] = useState(false);
   const [retried, setRetried] = useState(false);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
 
-  if (state.status === "loading") {
-    return (
-      <span
-        className="image-thumb-placeholder"
-        role="status"
-        aria-label="Cargando imagen"
-      >
-        <LoaderCircle size={18} className="loading-icon" />
-      </span>
-    );
-  }
-  if (state.status === "error" || failed || !state.url) {
+  if (state.status === "error" || failed) {
     return (
       <span className="image-thumb-placeholder is-error">
         <ImageOff size={18} aria-hidden="true" />
@@ -48,24 +40,42 @@ const ImageThumb = ({
       </span>
     );
   }
+
+  const isLoaded = !!state.url && loadedUrl === state.url;
   return (
-    <img
-      src={state.url}
-      alt={label}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-      onLoad={onLoad}
-      onError={() => {
-        // Una URL firmada puede haber vencido: se pide una nueva una sola vez
-        if (!retried && !isLocalRef(imageRef)) {
-          setRetried(true);
-          onRetry(imageRef);
-        } else {
-          setFailed(true);
-        }
-      }}
-    />
+    <span className={`image-thumb-frame${isLoaded ? " is-loaded" : ""}`}>
+      {!isLoaded && (
+        <span
+          className="image-thumb-placeholder"
+          role="status"
+          aria-label="Cargando imagen"
+        >
+          <LoaderCircle size={18} className="loading-icon" />
+        </span>
+      )}
+      {state.url && (
+        <img
+          src={state.url}
+          alt={label}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onLoad={() => {
+            setLoadedUrl(state.url ?? null);
+            onLoad?.();
+          }}
+          onError={() => {
+            // Una URL firmada puede haber vencido: se pide una nueva una sola vez
+            if (!retried && !isLocalRef(imageRef)) {
+              setRetried(true);
+              onRetry(imageRef);
+            } else {
+              setFailed(true);
+            }
+          }}
+        />
+      )}
+    </span>
   );
 };
 

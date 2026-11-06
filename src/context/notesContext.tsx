@@ -23,6 +23,7 @@ import {
   type ImageRef,
 } from "@/types/thinking";
 import {
+  primeImageUrl,
   remoteImageStore,
   storeForMode,
   toImageStoreError,
@@ -267,6 +268,8 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
+      // Mismo orden que `blobs` (allSettled conserva el orden y no hubo fallas)
+      saved.forEach((ref, i) => primeImageUrl(ref, blobs[i]));
       const thinking = createImageThinking(saved, text);
       setActiveNoteState((prev) =>
         prev?.id === noteId
