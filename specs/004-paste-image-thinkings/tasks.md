@@ -256,7 +256,7 @@ desplegar el backend. La app muestra los mismos textos en el mismo orden; un
 
   Actualizar `src/notes/dto/create-note.dto.ts`, `update-note.dto.ts` y `delete-note.dto.ts` (tipos), `notes.controller.ts` si castea, y `notes.service.spec.ts`. Correr `npm test`.
 - [X] T043 [P] [US5] Crear `../thinking-notes-backend/prisma/sql/002-content-list-typed.sql` según el contrato (transacción, `WITH ORDINALITY`, solo filas con algún elemento string, `NULL` → `[]`), con la consulta de verificación comentada al final
-- [ ] T044 [US5] Aplicar el SQL 002 en el proyecto Supabase de desarrollo y verificar con la consulta (debe dar 0). Aplicarlo de nuevo no debe cambiar nada. Después, verificar desde la app con sesión (quickstart, "Migración")
+- [X] T044 [US5] Aplicar el SQL 002 en el proyecto Supabase de desarrollo y verificar con la consulta (debe dar 0). Aplicarlo de nuevo no debe cambiar nada. Después, verificar desde la app con sesión (quickstart, "Migración")
 
 **Checkpoint**: con sesión, los pensamientos de texto funcionan con el formato nuevo de
 punta a punta.
@@ -291,7 +291,7 @@ previa.
 
 ### Implementación de la Historia 4
 
-- [ ] T047 [P] [US4] Crear `../thinking-notes-backend/prisma/sql/003-storage-thinking-images.sql`, con el bucket y las políticas de [contracts/storage-thinking-images.md](./contracts/storage-thinking-images.md). Usar `insert … on conflict do update` para el bucket y `drop policy if exists` + `create policy` para que sea idempotente. Aplicarlo en Supabase de desarrollo
+- [X] T047 [P] [US4] Crear `../thinking-notes-backend/prisma/sql/003-storage-thinking-images.sql`, con el bucket y las políticas de [contracts/storage-thinking-images.md](./contracts/storage-thinking-images.md). Usar `insert … on conflict do update` para el bucket y `drop policy if exists` + `create policy` para que sea idempotente. Aplicarlo en Supabase de desarrollo
 - [X] T048 [US4] Crear `src/services/images/remoteImageStore.ts`:
   - usa `supabase` de `lib/supabaseClient`;
   - el uid sale de `getSession()`;
@@ -343,7 +343,7 @@ aparece "[Imagen no disponible]".
 - [X] T062 [P] Backend: `npm run lint` y `npm run build` en `../thinking-notes-backend`
 - [X] T063 Subir la versión a `1.9.0` en `package.json` (commit `chore: subir versión a 1.9.0`)
 - [X] T064 Gates finales: `npm test`, `npm run build` (comparar el chunk principal con T003) y `npm run lint`. Verificación del quickstart, sección "celular", pasos 1 y 4 (pegar desde Gboard e instalación/actualización de la PWA), y anotar el comportamiento en iOS Safari (limitación R6)
-- [ ] T065 Despliegue coordinado (contrato API, "Orden de despliegue"): SQL 002 y 003 en Supabase de producción, después el backend, después el PR del frontend a `main` (Vercel). Verificar en producción la migración (consulta = 0) y una subida con sesión
+- [X] T065 Despliegue coordinado (contrato API, "Orden de despliegue"): SQL 002 y 003 en Supabase de producción, después el backend, después el PR del frontend a `main` (Vercel). Verificar en producción la migración (consulta = 0) y una subida con sesión
 
 ---
 
