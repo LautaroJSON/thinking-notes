@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Check, Palette } from "lucide-react";
 import useTheme from "@/hooks/useTheme";
+import useSounds from "@/hooks/useSounds";
 import type { ThemeId } from "@/components/utils/theme";
 import "./styles.css";
 
@@ -14,6 +15,7 @@ interface ThemeSelectorProps {
 // al tocar afuera, con Escape o volviendo a tocar el botón.
 const ThemeSelector = ({ placement = "top" }: ThemeSelectorProps) => {
   const { theme, themes, setTheme } = useTheme();
+  const { play } = useSounds();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -33,7 +35,10 @@ const ThemeSelector = ({ placement = "top" }: ThemeSelectorProps) => {
     itemRefs.current[Math.max(activeIndex, 0)]?.focus();
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setIsOpen(false);
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setIsOpen(false);
+        play("close");
+      }
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
@@ -43,6 +48,7 @@ const ThemeSelector = ({ placement = "top" }: ThemeSelectorProps) => {
 
   const handleSelect = (id: ThemeId) => {
     setTheme(id);
+    play("select");
     close();
   };
 
@@ -75,9 +81,11 @@ const ThemeSelector = ({ placement = "top" }: ThemeSelectorProps) => {
         break;
       case "Escape":
         e.preventDefault();
+        play("close");
         close();
         break;
       case "Tab":
+        play("close");
         close({ focusButton: false });
         break;
     }
@@ -89,7 +97,10 @@ const ThemeSelector = ({ placement = "top" }: ThemeSelectorProps) => {
         ref={buttonRef}
         type="button"
         className="circular-button theme-selector-toggle"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          play(isOpen ? "close" : "select");
+          setIsOpen((prev) => !prev);
+        }}
         title="Cambiar tema"
         aria-label="Cambiar tema"
         aria-haspopup="menu"

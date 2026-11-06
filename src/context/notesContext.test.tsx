@@ -23,6 +23,17 @@ vi.mock("../../lib/supabaseClient", () => ({
   supabase: { auth: { getSession, onAuthStateChange } },
 }));
 
+const { playSoundMock } = vi.hoisted(() => ({ playSoundMock: vi.fn() }));
+vi.mock("@/hooks/useSounds", () => ({
+  default: () => ({
+    prefs: { enabled: true, typing: true, selection: true, actions: true },
+    setEnabled: vi.fn(),
+    setCategory: vi.fn(),
+    play: playSoundMock,
+  }),
+  playSound: playSoundMock,
+}));
+
 vi.mock("../services/service", () => ({
   getNotesService: vi.fn(),
   createNoteService: vi.fn(),
@@ -1028,6 +1039,115 @@ describe("NotesProvider", () => {
       fireEvent.click(screen.getByTitle("Borrar"));
 
       expect(listScrolls()).toBe(0);
+    });
+  });
+  describe("sonidos de crear y borrar nota", () => {
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <NotesProvider>{children}</NotesProvider>
+    );
+    const renderNotes = async () => {
+      const hook = renderHook(() => useNotes(), { wrapper });
+      await flush();
+      return hook;
+    };
+    const soundCalls = () => playSoundMock.mock.calls.map(([id]) => id);
+
+    beforeEach(() => {
+      playSoundMock.mockClear();
+      vi.mocked(service.createNoteService).mockReset();
+      vi.mocked(service.deleteNoteService).mockReset();
+    });
+
+    describe("offline", () => {
+      beforeEach(() => {
+        mockSession(false);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([SAVED_NOTE]));
+      });
+
+      it("cargar las notas no suena", async () => {
+        await renderNotes();
+        expect(playSoundMock).not.toHaveBeenCalled();
+      });
+
+      it("crear una nota suena una vez", async () => {
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.addNote();
+        });
+        expect(soundCalls()).toEqual(["create"]);
+      });
+
+      it("borrar una nota suena una vez", async () => {
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.deleteNote("n1");
+        });
+        expect(soundCalls()).toEqual(["remove"]);
+      });
+    });
+
+    describe("online", () => {
+      beforeEach(() => {
+        mockSession(true);
+        vi.mocked(service.getNotesService).mockResolvedValue([
+          {
+            id: "n1",
+            title: "Idea",
+            contentList: [THINKING_A],
+            createdAt: null,
+            updatedAt: null,
+          },
+        ]);
+      });
+
+      it("cargar las notas no suena", async () => {
+        await renderNotes();
+        expect(playSoundMock).not.toHaveBeenCalled();
+      });
+
+      it("crear una nota suena cuando la API responde", async () => {
+        vi.mocked(service.createNoteService).mockResolvedValue({
+          id: "n2",
+          createdAt: null,
+          updatedAt: null,
+        } as Awaited<ReturnType<typeof service.createNoteService>>);
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.addNote();
+        });
+        await flush();
+        expect(soundCalls()).toEqual(["create"]);
+      });
+
+      it("si la API no crea la nota, no suena", async () => {
+        vi.mocked(service.createNoteService).mockRejectedValue(new Error("500"));
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.addNote();
+        });
+        await flush();
+        expect(playSoundMock).not.toHaveBeenCalled();
+      });
+
+      it("borrar una nota suena cuando la API responde", async () => {
+        vi.mocked(service.deleteNoteService).mockResolvedValue({ id: "n1" });
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.deleteNote("n1");
+        });
+        await flush();
+        expect(soundCalls()).toEqual(["remove"]);
+      });
+
+      it("si la API no borra la nota, no suena", async () => {
+        vi.mocked(service.deleteNoteService).mockRejectedValue(new Error("500"));
+        const { result } = await renderNotes();
+        await act(async () => {
+          result.current.deleteNote("n1");
+        });
+        await flush();
+        expect(playSoundMock).not.toHaveBeenCalled();
+      });
     });
   });
 });

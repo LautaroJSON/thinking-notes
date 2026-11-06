@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import useSounds from "@/hooks/useSounds";
 import { CircleAlert } from "lucide-react";
 import { formatNoteDate } from "@/components/utils/dates";
 
@@ -17,13 +18,19 @@ const NoteInfo = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverId = useId();
 
+  const { play } = useSounds();
+
   useEffect(() => {
     if (!isOpen) return;
+    const closeMenu = () => {
+      setIsOpen(false);
+      play("close");
+    };
     const handlePointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setIsOpen(false);
+      if (!containerRef.current?.contains(e.target as Node)) closeMenu();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") closeMenu();
     };
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -31,13 +38,18 @@ const NoteInfo = ({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, play]);
+
+  const toggle = () => {
+    play(isOpen ? "close" : "select");
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <div className="note-info" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggle}
         className="action-btn note-info-toggle"
         title="Información de la nota"
         aria-label="Información de la nota"

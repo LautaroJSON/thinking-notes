@@ -1,0 +1,158 @@
+.sound-selector {
+  position: relative;
+  display: flex;
+}
+
+/* Área táctil de al menos 40 px aunque el botón mida 34 px */
+.sound-selector-toggle {
+  position: relative;
+}
+
+.sound-selector-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.sound-selector-toggle[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+@keyframes sound-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sound-menu {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  box-sizing: border-box;
+
+  background: var(--surface-floating);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-panel);
+
+  animation: sound-menu-in 0.12s ease-out;
+}
+
+/* Pie del panel: se abre hacia arriba, sobre la lista de notas */
+.sound-menu--top {
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+
+.sound-menu--right {
+  bottom: 0;
+  left: calc(100% + 12px);
+}
+
+.sound-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.sound-menu-item:hover {
+  background: var(--surface-hover);
+}
+
+.sound-menu-item:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.sound-menu-item--main {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* Con el general apagado, las categorías se ven atenuadas pero se pueden
+   seguir cambiando */
+.sound-menu-item.is-dimmed {
+  opacity: 0.5;
+}
+
+.sound-menu-label {
+  flex: 1;
+}
+
+.sound-menu-separator {
+  height: 1px;
+  margin: 2px 6px;
+  background: var(--border);
+}
+
+/* Interruptor visual: refleja aria-checked del ítem */
+.sound-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 30px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background 0.15s ease;
+}
+
+.sound-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.sound-menu-item[aria-checked="true"] .sound-switch {
+  background: var(--primary-color);
+}
+
+.sound-menu-item[aria-checked="true"] .sound-switch::after {
+  transform: translateX(12px);
+}
+
+@media (max-width: 768px) {
+  .sound-menu-item {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-menu {
+    animation: none;
+  }
+
+  .sound-switch,
+  .sound-switch::after,
+  .sound-menu-item {
+    transition: none;
+  }
+}

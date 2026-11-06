@@ -25,6 +25,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
 import { usePendingImages } from "@/hooks/usePendingImages";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
+import useSounds from "@/hooks/useSounds";
 import {
   appendTranscript,
   composeDraft,
@@ -87,6 +88,7 @@ const ActiveNoteView = () => {
   // Imágenes sin enviar: cada nota tiene las suyas, como el borrador de texto
   const pendingImages = usePendingImages(activeNoteId);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { play } = useSounds();
 
   const { query, setQuery, matchCount, matchMap } = useNoteSearch(
     ActiveNote ?? null,
@@ -109,6 +111,14 @@ const ActiveNoteView = () => {
     showHint,
   } = useSpeechDictation({ onFinalText: handleFinalText });
   const isDictating = dictationStatus === "listening";
+
+  // Sonido al empezar y al terminar el dictado
+  const wasDictatingRef = useRef(isDictating);
+  useEffect(() => {
+    if (wasDictatingRef.current === isDictating) return;
+    wasDictatingRef.current = isDictating;
+    play(isDictating ? "dictationStart" : "dictationStop");
+  }, [isDictating, play]);
 
   // Guardar el borrador mientras se escribe, para no perderlo al salir
   useEffect(() => {
@@ -209,6 +219,7 @@ const ActiveNoteView = () => {
       try {
         const added = await addImageThinking(pendingImages.readyBlobs, text);
         if (added) {
+          play("send");
           pendingImages.clear();
           setDraft("");
           if (isDictating) resetSegment();
@@ -225,6 +236,7 @@ const ActiveNoteView = () => {
     }
 
     handleNewThinking(text);
+    play("send");
     setDraft("");
     // Lo que se siga dictando arranca una idea nueva, sin duplicados
     if (isDictating) resetSegment();
@@ -235,6 +247,7 @@ const ActiveNoteView = () => {
     if (images.length > 0) {
       e.preventDefault();
       pendingImages.addFiles(images);
+      play("paste");
     } else if (otherFiles.length > 0 && !hasClipboardText(e.clipboardData)) {
       e.preventDefault();
       pendingImages.setError(IMAGE_ERRORS.notImage);
@@ -283,6 +296,7 @@ const ActiveNoteView = () => {
   const handleDeleteThinking = (thinkingId: string) => {
     if (editingId === thinkingId) setEditingId(null);
     removeThinking(thinkingId);
+    play("remove");
   };
 
   const replaceThinking = (thinkingId: string, next: Thinking) =>
