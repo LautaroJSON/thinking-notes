@@ -29,14 +29,14 @@
   }
 }
 
-/* Se ubica respecto del pie del sidebar (.sidebar-footer), hacia arriba */
+/* Se ubica respecto del pie del sidebar (.sidebar-footer), hacia arriba y
+   centrado: ocupa todo el ancho del sidebar menos 16 px a cada lado */
 .customize-panel {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 16px;
+  right: 16px;
   z-index: 30;
-  width: 288px;
-  max-width: calc(100vw - 32px);
   max-height: min(480px, calc(100dvh - 120px));
   overflow-x: hidden;
   overflow-y: auto;

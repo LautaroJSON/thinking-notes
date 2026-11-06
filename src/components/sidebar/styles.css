@@ -16,7 +16,9 @@
 }
 
 .sidebar-container {
-  width: 300px;
+  /* Ancho para que el menú de Personalizar entre centrado con 16 px a cada
+     lado; en celulares angostos deja ver un poco del fondo para cerrarlo */
+  width: min(330px, calc(100vw - 40px));
   height: 85vh;
   height: 85dvh;
   padding: 20px 0px 20px 0px;
