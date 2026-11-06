@@ -30,9 +30,49 @@ vi.mock("../services/service", () => ({
   reorderNotesService: vi.fn(),
 }));
 
-import * as service from "../services/service";
+const { localStore, remoteStore } = vi.hoisted(() => ({
+  localStore: {
+    save: vi.fn(),
+    remove: vi.fn(),
+    getUrls: vi.fn(),
+    getBlob: vi.fn(),
+    listAll: vi.fn(),
+  },
+  remoteStore: {
+    save: vi.fn(),
+    remove: vi.fn(),
+    getUrls: vi.fn(),
+    getBlob: vi.fn(),
+    listForNote: vi.fn(),
+    removeNoteFolder: vi.fn(),
+    invalidateUrl: vi.fn(),
+  },
+}));
 
-const SAVED_NOTE = { id: "n1", title: "Idea", thinkings: ["a"] };
+const { compressImage } = vi.hoisted(() => ({ compressImage: vi.fn() }));
+vi.mock("@/components/utils/imageProcessing", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@/components/utils/imageProcessing")
+  >()),
+  compressImage,
+}));
+
+vi.mock("@/services/images/localImageStore", () => ({
+  localImageStore: localStore,
+}));
+vi.mock("@/services/images/remoteImageStore", () => ({
+  remoteImageStore: remoteStore,
+}));
+
+import * as service from "../services/service";
+import { ImageStoreError } from "@/services/images/errors";
+import {
+  getPendingImageDeletions,
+  QUEUE_KEY,
+} from "@/services/images/imageCleanup";
+
+const THINKING_A = { id: "ta", type: "text" as const, value: "a" };
+const SAVED_NOTE = { id: "n1", title: "Idea", thinkings: [THINKING_A] };
 
 const mockSession = (online: boolean) => {
   getSession.mockResolvedValue({
@@ -94,6 +134,14 @@ describe("NotesProvider", () => {
     });
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    localStore.remove.mockResolvedValue(undefined);
+    localStore.listAll.mockResolvedValue([]);
+    localStore.getUrls.mockResolvedValue(new Map());
+    remoteStore.remove.mockResolvedValue(undefined);
+    remoteStore.listForNote.mockResolvedValue([]);
+    remoteStore.removeNoteFolder.mockResolvedValue(undefined);
+    remoteStore.getUrls.mockResolvedValue(new Map());
   });
 
   afterEach(() => {
@@ -158,7 +206,7 @@ describe("NotesProvider", () => {
         {
           id: "n1",
           title: "Idea",
-          contentList: ["a"],
+          contentList: [THINKING_A],
           createdAt: "2026-11-01T12:00:00.000Z",
           updatedAt: "2026-11-01T12:00:00.000Z",
         },
@@ -194,7 +242,7 @@ describe("NotesProvider", () => {
       expect(service.updateNoteService).toHaveBeenCalledTimes(1);
       expect(service.updateNoteService).toHaveBeenCalledWith("n1", {
         title: "Idea editada",
-        contentList: ["a"],
+        contentList: [THINKING_A],
       });
       expect(screen.getByDisplayValue("Idea editada")).toBeTruthy();
 
@@ -413,6 +461,440 @@ describe("NotesProvider", () => {
         expect(ids(result.current.notes)).toEqual(["C", "A", "B"]);
         expect(result.current.notes[1].title).toBe("A editada");
       });
+    });
+  });
+  describe("pensamientos con imágenes", () => {
+    const TEXT = { id: "t1", type: "text" as const, value: "texto" };
+    const IMAGE = {
+      id: "i1",
+      type: "image" as const,
+      value: ["local:x", "local:y"],
+      text: "pie",
+    };
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <NotesProvider>{children}</NotesProvider>
+    );
+    const blob = (name: string) => new Blob([name], { type: "image/webp" });
+
+    const openNote = async (id = "n1") => {
+      const hook = renderHook(() => useNotes(), { wrapper });
+      await flush();
+      act(() => hook.result.current.setActiveNote(id));
+      return hook;
+    };
+    const storedNote = () => JSON.parse(localStorage.getItem(STORAGE_KEY)!)[0];
+
+    afterEach(() => {
+      Object.values(localStore).forEach((fn) => fn.mockReset());
+      Object.values(remoteStore).forEach((fn) => fn.mockReset());
+      vi.mocked(service.updateNoteService).mockReset();
+      vi.mocked(service.deleteNoteService).mockReset();
+    });
+
+    describe("sin sesión", () => {
+      beforeEach(() => {
+        mockSession(false);
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify([{ id: "n1", title: "N", thinkings: [TEXT, IMAGE] }]),
+        );
+      });
+
+      it("guarda todas las imágenes en un único pensamiento y lo persiste ya", async () => {
+        localStore.save
+          .mockResolvedValueOnce("local:a")
+          .mockResolvedValueOnce("local:b");
+        const { result } = await openNote();
+
+        await act(() =>
+          result.current.addImageThinking([blob("a"), blob("b")], "  hola  "),
+        );
+        await flush();
+
+        const added = {
+          id: expect.any(String),
+          type: "image",
+          value: ["local:a", "local:b"],
+          text: "hola",
+        };
+        expect(result.current.activeNoteState?.thinkings[2]).toEqual(added);
+        // Sin esperar el debounce del editor
+        expect(storedNote().thinkings[2]).toEqual(added);
+        expect(localStore.save).toHaveBeenCalledWith(expect.any(Blob), {
+          noteId: "n1",
+        });
+        expect(result.current.waitingResponse).toBe("none");
+        expect(result.current.loadingSaveNote).toBe(false);
+      });
+
+      it("omite el texto si está vacío", async () => {
+        localStore.save.mockResolvedValueOnce("local:a");
+        const { result } = await openNote();
+
+        await act(() => result.current.addImageThinking([blob("a")], "   "));
+
+        expect(result.current.activeNoteState?.thinkings[2]).toEqual({
+          id: expect.any(String),
+          type: "image",
+          value: ["local:a"],
+        });
+      });
+
+      it("si una imagen falla no cambia la nota y deshace las guardadas", async () => {
+        localStore.save
+          .mockResolvedValueOnce("local:a")
+          .mockRejectedValueOnce(new ImageStoreError("quota"));
+        const { result } = await openNote();
+
+        const error = await act(() =>
+          result.current
+            .addImageThinking([blob("a"), blob("b")], "")
+            .catch((e: unknown) => e),
+        );
+
+        expect(error).toBeInstanceOf(ImageStoreError);
+        expect(error).toMatchObject({ code: "quota" });
+        expect(result.current.activeNoteState?.thinkings).toEqual([
+          TEXT,
+          IMAGE,
+        ]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:a"]);
+        expect(result.current.loadingSaveNote).toBe(false);
+      });
+
+      it("si falla deshacer la subida, encola los archivos", async () => {
+        localStore.save
+          .mockResolvedValueOnce("local:a")
+          .mockRejectedValueOnce(new Error("boom"));
+        localStore.remove.mockRejectedValue(new Error("tampoco"));
+        const { result } = await openNote();
+
+        await act(() =>
+          result.current
+            .addImageThinking([blob("a"), blob("b")], "")
+            .catch(() => {}),
+        );
+
+        expect(getPendingImageDeletions()).toContain("local:a");
+      });
+
+      it("borrar un pensamiento con imágenes guarda y borra sus archivos", async () => {
+        const { result } = await openNote();
+
+        act(() => result.current.removeThinking("i1"));
+        await flush();
+        await flush();
+
+        expect(storedNote().thinkings).toEqual([TEXT]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:x"]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:y"]);
+        expect(getPendingImageDeletions()).toEqual([]);
+      });
+
+      it("si falla el guardado no borra archivos que la nota sigue usando", async () => {
+        const { result } = await openNote();
+        const originalSetItem = Storage.prototype.setItem;
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+          this: Storage,
+          key,
+          value,
+        ) {
+          if (key === STORAGE_KEY) throw new Error("cuota excedida");
+          originalSetItem.call(this, key, value);
+        });
+
+        act(() => result.current.removeThinking("i1"));
+        await flush();
+
+        expect(localStore.remove).not.toHaveBeenCalled();
+        expect(getPendingImageDeletions()).toEqual(["local:x", "local:y"]);
+      });
+
+      describe("editImageThinking", () => {
+        it("quita una imagen y conserva el resto", async () => {
+          const { result } = await openNote();
+
+          act(() =>
+            result.current.editImageThinking("i1", {
+              removedRefs: ["local:x"],
+              text: "nuevo pie",
+            }),
+          );
+          await flush();
+          await flush();
+
+          expect(storedNote().thinkings[1]).toEqual({
+            id: "i1",
+            type: "image",
+            value: ["local:y"],
+            text: "nuevo pie",
+          });
+          expect(localStore.remove).toHaveBeenCalledTimes(1);
+          expect(localStore.remove).toHaveBeenCalledWith(["local:x"]);
+        });
+
+        it("sin imágenes y con texto pasa a ser de texto con el mismo id", async () => {
+          const { result } = await openNote();
+
+          act(() =>
+            result.current.editImageThinking("i1", {
+              removedRefs: ["local:x", "local:y"],
+              text: "solo texto",
+            }),
+          );
+          await flush();
+
+          expect(storedNote().thinkings[1]).toEqual({
+            id: "i1",
+            type: "text",
+            value: "solo texto",
+          });
+        });
+
+        it("sin imágenes ni texto se borra", async () => {
+          const { result } = await openNote();
+
+          act(() =>
+            result.current.editImageThinking("i1", {
+              removedRefs: ["local:x", "local:y"],
+              text: "  ",
+            }),
+          );
+          await flush();
+
+          expect(storedNote().thinkings).toEqual([TEXT]);
+        });
+      });
+
+      it("borrar la nota borra todas sus imágenes", async () => {
+        const { result } = await openNote();
+
+        await act(() => result.current.deleteNote("n1"));
+        await flush();
+
+        expect(result.current.notes).toEqual([]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:x"]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:y"]);
+      });
+
+      it("al iniciar procesa la cola y limpia imágenes locales huérfanas", async () => {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(["local:pendiente"]));
+        localStore.listAll.mockResolvedValue([
+          { ref: "local:huerfana", createdAt: 0 },
+          { ref: "local:x", createdAt: 0 },
+        ]);
+
+        renderHook(() => useNotes(), { wrapper });
+        await flush();
+        await flush();
+
+        expect(localStore.remove).toHaveBeenCalledWith(["local:pendiente"]);
+        expect(localStore.remove).toHaveBeenCalledWith(["local:huerfana"]);
+        expect(localStore.remove).not.toHaveBeenCalledWith(["local:x"]);
+      });
+    });
+
+    describe("con sesión", () => {
+      const REMOTE_IMAGE = { id: "r1", type: "image" as const, value: ["u/n1/a.webp"] };
+
+      beforeEach(() => {
+        mockSession(true);
+        vi.mocked(service.getNotesService).mockResolvedValue([
+          {
+            id: "n1",
+            title: "N",
+            contentList: [TEXT, REMOTE_IMAGE],
+            createdAt: null,
+            updatedAt: null,
+          },
+        ]);
+        vi.mocked(service.updateNoteService).mockImplementation(
+          async (id, payload) => ({
+            id,
+            userId: "u",
+            title: payload.title ?? "",
+            contentList: payload.contentList ?? [],
+            createdAt: null,
+            updatedAt: null,
+          }),
+        );
+      });
+
+      it("sube al almacenamiento remoto y guarda la nota en la API", async () => {
+        remoteStore.save.mockResolvedValueOnce("u/n1/b.webp");
+        const { result } = await openNote();
+
+        await act(() => result.current.addImageThinking([blob("b")], "pie"));
+        await flush();
+
+        expect(remoteStore.save).toHaveBeenCalledWith(expect.any(Blob), {
+          noteId: "n1",
+        });
+        expect(localStore.save).not.toHaveBeenCalled();
+        expect(service.updateNoteService).toHaveBeenCalledWith("n1", {
+          title: "N",
+          contentList: [
+            TEXT,
+            REMOTE_IMAGE,
+            {
+              id: expect.any(String),
+              type: "image",
+              value: ["u/n1/b.webp"],
+              text: "pie",
+            },
+          ],
+        });
+      });
+
+      it("si la subida falla la nota no cambia", async () => {
+        remoteStore.save.mockRejectedValue(new ImageStoreError("network"));
+        const { result } = await openNote();
+
+        await expect(
+          act(() => result.current.addImageThinking([blob("b")], "")),
+        ).rejects.toMatchObject({ code: "network" });
+        expect(service.updateNoteService).not.toHaveBeenCalled();
+        expect(result.current.activeNoteState?.thinkings).toHaveLength(2);
+      });
+
+      it("al abrir una nota limpia su carpeta remota", async () => {
+        await openNote();
+        expect(remoteStore.listForNote).toHaveBeenCalledWith("n1");
+      });
+
+      it("al borrar la nota borra su carpeta y sus imágenes remotas", async () => {
+        vi.mocked(service.deleteNoteService).mockResolvedValue({ id: "n1" });
+        const { result } = await openNote();
+
+        await act(() => result.current.deleteNote("n1"));
+        await flush();
+
+        expect(remoteStore.removeNoteFolder).toHaveBeenCalledWith("n1");
+        expect(remoteStore.remove).toHaveBeenCalledWith(["u/n1/a.webp"]);
+        expect(getPendingImageDeletions()).toEqual([]);
+      });
+
+      it("si la API no borra la nota, no borra sus imágenes", async () => {
+        vi.mocked(service.deleteNoteService).mockRejectedValue(new Error("500"));
+        const { result } = await openNote();
+
+        await act(() => result.current.deleteNote("n1"));
+        await flush();
+
+        expect(remoteStore.removeNoteFolder).not.toHaveBeenCalled();
+        expect(remoteStore.remove).not.toHaveBeenCalled();
+      });
+    });
+  });
+  describe("pegar imágenes en el editor", () => {
+    const clipboard = (files: File[], types: string[] = []) => ({
+      files,
+      items: [],
+      types,
+    });
+    const png = (name: string) =>
+      new File([name], `${name}.png`, { type: "image/png" });
+
+    beforeEach(() => {
+      mockSession(false);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([SAVED_NOTE]));
+      compressImage.mockImplementation(async (file: File) => ({
+        blob: new Blob([file.name], { type: "image/webp" }),
+        width: 10,
+        height: 10,
+      }));
+      vi.stubGlobal("URL", {
+        ...URL,
+        createObjectURL: vi.fn(() => "blob:preview"),
+        revokeObjectURL: vi.fn(),
+      });
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      compressImage.mockReset();
+      localStore.save.mockReset();
+    });
+
+    it("muestra la vista previa y al enviar crea un pensamiento con imágenes y texto", async () => {
+      localStore.save
+        .mockResolvedValueOnce("local:a")
+        .mockResolvedValueOnce("local:b");
+      localStore.getUrls.mockImplementation(
+        async (refs: string[]) => new Map(refs.map((r) => [r, `blob:${r}`])),
+      );
+      await renderEditor();
+      const input = screen.getByLabelText("Nueva idea");
+
+      const notPrevented = fireEvent.paste(input, {
+        clipboardData: clipboard([png("a"), png("b")]),
+      });
+      await flush();
+
+      expect(notPrevented).toBe(false);
+      expect(screen.getByLabelText("Quitar imagen 1")).toBeTruthy();
+      expect(screen.getByLabelText("Quitar imagen 2")).toBeTruthy();
+
+      fireEvent.change(input, { target: { value: "captura" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      await flush();
+      await flush();
+
+      expect(screen.queryByLabelText("Quitar imagen 1")).toBeNull();
+      expect(screen.getByLabelText("Ver imagen 1 de 2")).toBeTruthy();
+      expect(screen.getByText("captura")).toBeTruthy();
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)[0];
+      expect(saved.thinkings[1]).toMatchObject({
+        type: "image",
+        value: ["local:a", "local:b"],
+        text: "captura",
+      });
+    });
+
+    it("pegar solo texto no muestra vista previa", async () => {
+      await renderEditor();
+      const input = screen.getByLabelText("Nueva idea");
+
+      const notPrevented = fireEvent.paste(input, {
+        clipboardData: clipboard([], ["text/plain"]),
+      });
+
+      expect(notPrevented).toBe(true);
+      expect(compressImage).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText("Imágenes a adjuntar")).toBeNull();
+    });
+
+    it("si falla la subida muestra el error y conserva la vista previa", async () => {
+      localStore.save.mockRejectedValue(new ImageStoreError("quota"));
+      await renderEditor();
+      const input = screen.getByLabelText("Nueva idea");
+
+      fireEvent.paste(input, { clipboardData: clipboard([png("a")]) });
+      await flush();
+      fireEvent.keyDown(input, { key: "Enter" });
+      await flush();
+
+      expect(screen.getByRole("alert").textContent).toMatch(
+        /espacio suficiente/,
+      );
+      expect(screen.getByLabelText("Quitar imagen 1")).toBeTruthy();
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)[0];
+      expect(saved.thinkings).toHaveLength(1);
+    });
+
+    it("pegar un archivo que no es imagen avisa", async () => {
+      await renderEditor();
+      const input = screen.getByLabelText("Nueva idea");
+
+      fireEvent.paste(input, {
+        clipboardData: clipboard([
+          new File(["%PDF"], "doc.pdf", { type: "application/pdf" }),
+        ]),
+      });
+
+      expect(screen.getByRole("alert").textContent).toBe(
+        "Solo se pueden pegar imágenes.",
+      );
     });
   });
 });

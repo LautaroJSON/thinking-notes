@@ -1,4 +1,5 @@
 import { supabase } from "../../lib/supabaseClient";
+import { parseThinkings, type Thinking } from "@/types/thinking";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -9,7 +10,7 @@ if (!API_BASE_URL) {
 export interface RemoteNote {
   id: string;
   title: string;
-  contentList: string[];
+  contentList: Thinking[];
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -18,19 +19,19 @@ export interface NoteResponse {
   id: string;
   userId: string;
   title: string;
-  contentList: string[];
+  contentList: Thinking[];
   createdAt: string | null;
   updatedAt: string | null;
 }
 
 interface NoteCreatePayload {
   title: string;
-  contentList: string[];
+  contentList: Thinking[];
 }
 
 interface NoteUpdatePayload {
   title?: string;
-  contentList?: string[];
+  contentList?: Thinking[];
 }
 
 const getAccessToken = async (): Promise<string> => {
@@ -82,27 +83,39 @@ const fetchJson = async <T>(
   return data as T;
 };
 
+// La API devuelve `contentList` como JSON libre: se valida y normaliza acá,
+// así el resto de la app recibe siempre `Thinking[]` bien formados.
+const withParsedContent = <T extends { contentList: unknown }>(
+  note: T,
+): T & { contentList: Thinking[] } => ({
+  ...note,
+  contentList: parseThinkings(note.contentList).thinkings,
+});
+
 export const getNotesService = async (): Promise<RemoteNote[]> => {
-  return fetchJson<RemoteNote[]>("/notes", { method: "GET" });
+  const notes = await fetchJson<RemoteNote[]>("/notes", { method: "GET" });
+  return notes.map(withParsedContent);
 };
 
 export const createNoteService = async (
   payload: NoteCreatePayload,
 ): Promise<NoteResponse> => {
-  return fetchJson<NoteResponse>("/notes", {
+  const note = await fetchJson<NoteResponse>("/notes", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  return withParsedContent(note);
 };
 
 export const updateNoteService = async (
   id: string,
   payload: NoteUpdatePayload,
 ): Promise<NoteResponse> => {
-  return fetchJson<NoteResponse>(`/notes/${id}`, {
+  const note = await fetchJson<NoteResponse>(`/notes/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  return withParsedContent(note);
 };
 
 export const deleteNoteService = async (

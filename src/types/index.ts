@@ -1,7 +1,17 @@
+import type { Thinking } from "./thinking";
+
+export type {
+  ImageRef,
+  ImageThinking,
+  TextThinking,
+  Thinking,
+  UnknownThinking,
+} from "./thinking";
+
 export interface INotes {
   id?: string;
   title: string;
-  thinkings: string[];
+  thinkings: Thinking[];
   /** Fecha ISO de creación; ausente en notas locales anteriores a esta versión. */
   createdAt?: string;
   /** Fecha ISO de la última modificación del contenido (no cambia al reordenar). */
@@ -16,4 +26,5 @@ export type WaitingResponseType =
   | "deletingNote"
   | "editingNote"
   | "reorderingNotes"
+  | "uploadingImages"
   | "none";
