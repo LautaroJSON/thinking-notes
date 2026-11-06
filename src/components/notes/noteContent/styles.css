@@ -12,6 +12,18 @@
   overflow: hidden;
 }
 
+/* Escritorio: el panel flota como una tarjeta separada del borde */
+@media (min-width: 769px) {
+  .note-c-container {
+    width: calc(100% - 14px);
+    height: calc(100vh - 28px);
+    height: calc(100dvh - 28px);
+    margin: 14px 14px 14px 0;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  }
+}
+
 .note-c-container::after {
   content: "";
   position: absolute;
@@ -75,7 +87,11 @@
 
 /* Título como parte del contenido, alineado con las ideas */
 .note-heading {
-  padding: 24px 20px 0;
+  width: 100%;
+  max-width: calc(var(--reading-width) + 40px);
+  margin-inline: auto;
+  padding: 20px 20px 0;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
@@ -100,7 +116,7 @@
 .title-input {
   width: 100%;
   padding: 0;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -114,6 +130,10 @@
 
 .title-input::placeholder {
   color: var(--text-faint);
+}
+
+.note-c-container {
+  --reading-width: 720px;
 }
 
 .thinking-list {
@@ -174,6 +194,10 @@
 
 /* Campo de nueva idea: recuadro redondeado que crece con el texto */
 .composer {
+  width: 100%;
+  max-width: var(--reading-width);
+  margin-inline: auto;
+  box-sizing: border-box;
   display: flex;
   align-items: flex-end;
   gap: 6px;
@@ -251,9 +275,27 @@
 
 .composer-hint {
   flex-shrink: 0;
-  margin: 12px 0 6px 16px;
+  width: 100%;
+  max-width: var(--reading-width);
+  max-height: 0;
+  margin: 8px auto 0;
+  padding-left: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  opacity: 0;
   font-size: 0.72rem;
   color: var(--text-subtle);
+  transition:
+    opacity 0.2s ease,
+    max-height 0.2s ease,
+    margin 0.2s ease;
+}
+
+/* Aparece solo mientras se escribe en el cuadro de texto */
+.thinking-list:has(.composer:focus-within) .composer-hint {
+  max-height: 20px;
+  margin: 10px auto 6px;
+  opacity: 1;
 }
 
 /* En pantallas táctiles el botón de enviar ya es la forma de agregar */
@@ -264,6 +306,7 @@
 
   .composer {
     margin-top: 12px;
+    margin-inline: auto;
   }
 }
 
@@ -298,7 +341,11 @@
 }
 
 .dictation-message {
-  margin: 6px 4px 0;
+  width: 100%;
+  max-width: var(--reading-width);
+  margin: 6px auto 0;
+  padding-inline: 4px;
+  box-sizing: border-box;
   font-size: 0.85rem;
   color: var(--text-muted);
   animation: dictationFadeIn 0.2s ease-out;
@@ -361,8 +408,8 @@
 
 /* Cada idea: viñeta lila a la altura de la primera línea, con aire entre ideas */
 .thinking-text-container {
-  --thinking-pad-y: 10px;
-  --thinking-line: 1.6;
+  --thinking-pad-y: 5px;
+  --thinking-line: 1.55;
   position: relative;
   display: flex;
   flex-shrink: 0;
@@ -542,7 +589,7 @@
   }
 
   .title-input {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
   /* Deja lugar para el número de versión debajo del cuadro de texto */
@@ -583,10 +630,11 @@
 }
 
 .thinkings-container {
-  /* max-height: 100%; */
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  /* Centra las ideas en el ancho de lectura sin mover la barra de scroll */
+  padding-inline: max(0px, (100% - var(--reading-width)) / 2);
   flex-grow: 1;
   overflow-y: auto;
 }
