@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import useSounds from "@/hooks/useSounds";
 
 const FEEDBACK_MS = 1500;
 
@@ -17,6 +18,7 @@ const CopyButton = ({
   className?: string;
 }) => {
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
+  const { play } = useSounds();
 
   useEffect(() => {
     if (status === "idle") return;
@@ -28,6 +30,7 @@ const CopyButton = ({
     try {
       await navigator.clipboard.writeText(getText());
       setStatus("copied");
+      play("copy");
     } catch (error) {
       console.error("No se pudo copiar:", error);
       setStatus("error");

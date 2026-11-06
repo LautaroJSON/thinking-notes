@@ -39,6 +39,7 @@ import { v4 as uuidv4 } from "uuid";
 import { loadNotesFromStorage, STORAGE_KEY } from "@/components/utils";
 import { clearDraft } from "@/components/utils/drafts";
 import { discardPendingImages } from "@/hooks/usePendingImages";
+import { playSound } from "@/hooks/useSounds";
 import { applyOrder, moveNote } from "@/components/utils/reorder";
 import { NotesContext } from "./notes-context";
 
@@ -384,6 +385,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         newNote.updatedAt = response.updatedAt ?? undefined;
         setNotes((prevNotes) => [...prevNotes, newNote]);
         setActiveNoteState(newNote);
+        playSound("create");
       } catch (error) {
         console.error("Error creando nota:", error);
       } finally {
@@ -405,6 +407,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error guardando notas en localStorage:", error);
       }
       setActiveNoteState(newNoteWithId);
+      playSound("create");
     }
   };
 
@@ -441,6 +444,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
         });
         closeActiveNote();
         setCleanupRequest((n) => n + 1);
+        playSound("remove");
       } catch (error) {
         console.error("Error eliminando nota:", error);
       } finally {
@@ -456,6 +460,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
       });
       closeActiveNote();
       setCleanupRequest((n) => n + 1);
+      playSound("remove");
     }
   };
 

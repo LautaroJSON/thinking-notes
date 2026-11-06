@@ -30,6 +30,8 @@ import ProfileModal from "../profile";
 import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
 import { NotesSkeleton } from "../notes/noteItem/notesSkeleton";
 import ThemeSelector from "../themeSelector";
+import SoundSelector from "../soundSelector";
+import useSounds from "@/hooks/useSounds";
 
 // Duración de la transición esqueleto → notas: el esqueleto se desvanece
 // mientras las notas entran escalonadas (ver noteItem/styles.css).
@@ -76,6 +78,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, loading } = useAuthentication();
+  const { play } = useSounds();
   const {
     notes,
     addNote,
@@ -125,6 +128,7 @@ const Sidebar = () => {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
+    play("drop");
     reorderNotes(String(active.id), String(over.id));
   };
 
@@ -143,6 +147,7 @@ const Sidebar = () => {
   };
 
   const handleSecActiveNote = (noteID: string) => {
+    play(activeNoteID === noteID ? "noteClose" : "noteOpen");
     if (activeNoteID === noteID) {
       closeActiveNote();
     } else {
@@ -175,7 +180,10 @@ const Sidebar = () => {
             )}
             <button
               className="circular-button"
-              onClick={() => setCollapsed(false)}
+              onClick={() => {
+                play("panelOpen");
+                setCollapsed(false);
+              }}
               title="Expandir"
             >
               <CircleArrowRight />
@@ -233,7 +241,10 @@ const Sidebar = () => {
               </button>
               <button
                 className="circular-button"
-                onClick={() => setCollapsed(!collapsed)}
+                onClick={() => {
+                  play("panelClose");
+                  setCollapsed(true);
+                }}
                 title="Colapsar/Expandir"
               >
                 <CircleArrowLeft />
@@ -304,6 +315,7 @@ const Sidebar = () => {
       {!collapsed && (
         <div className="sidebar-footer">
           <ThemeSelector />
+          <SoundSelector />
         </div>
       )}
       <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />

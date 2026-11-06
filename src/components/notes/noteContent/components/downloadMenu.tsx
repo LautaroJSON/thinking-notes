@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import useSounds from "@/hooks/useSounds";
 import { Download, FileDown, FileText, LoaderCircle } from "lucide-react";
 import type { INotes } from "@/types";
 import {
@@ -15,13 +16,19 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
+  const { play } = useSounds();
+
   useEffect(() => {
     if (!isOpen) return;
+    const closeMenu = () => {
+      setIsOpen(false);
+      play("close");
+    };
     const handlePointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setIsOpen(false);
+      if (!containerRef.current?.contains(e.target as Node)) closeMenu();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") closeMenu();
     };
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -29,11 +36,17 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, play]);
+
+  const toggle = () => {
+    play(isOpen ? "close" : "select");
+    setIsOpen((prev) => !prev);
+  };
 
   const handleMarkdown = () => {
     if (!note) return;
     downloadNoteAsMarkdown(note);
+    play("copy");
     setIsOpen(false);
   };
 
@@ -42,6 +55,7 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
     setIsGeneratingPdf(true);
     try {
       await downloadNoteAsPdf(note, { getImageBlob });
+      play("copy");
       setIsOpen(false);
     } catch (error) {
       console.error("No se pudo generar el PDF:", error);
@@ -54,7 +68,7 @@ const DownloadMenu = ({ note }: { note: INotes | null | undefined }) => {
     <div className="note-info" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggle}
         className="action-btn note-info-toggle"
         title="Descargar nota"
         aria-label="Descargar nota"
