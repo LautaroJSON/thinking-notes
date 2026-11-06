@@ -197,9 +197,11 @@
 .composer-input {
   flex: 1;
   min-width: 0;
-  /* Altura de una línea; JS la ajusta al contenido hasta max-height */
+  /* Altura de una línea; JS la ajusta al contenido hasta max-height.
+     Tope: 8 líneas (12rem con line-height 1.5), o menos en pantallas
+     bajas; pasado eso el texto scrollea dentro del campo */
   min-height: 24px;
-  max-height: 50vh;
+  max-height: min(12rem, 30vh);
   margin: 0 0 5px;
   padding: 0;
   overflow-y: auto;
@@ -529,7 +531,8 @@
   /* El botón flotante del sidebar ocupa la esquina superior izquierda */
   .note-toolbar {
     min-height: 56px;
-    padding-left: 76px;
+    /* Píldora del sidebar colapsado (76 px) + aire */
+    padding-left: 88px;
   }
 
   .note-heading {
