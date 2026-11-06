@@ -42,6 +42,11 @@ import { discardPendingImages } from "@/hooks/usePendingImages";
 import { applyOrder, moveNote } from "@/components/utils/reorder";
 import { NotesContext } from "./notes-context";
 
+// Solo en desarrollo: demora la carga offline (casi instantánea) para poder
+// ver la animación de carga de la lista. En tests y producción es 0.
+const SIMULATED_OFFLINE_LOAD_MS =
+  import.meta.env.DEV && import.meta.env.MODE !== "test" ? 3000 : 0;
+
 export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<INotes[]>([]);
   const [activeNoteState, setActiveNoteState] = useState<INotes | null>(null);
@@ -108,8 +113,22 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     if (isLogged === "online") {
       loadRemoteNotes();
     } else if (isLogged === "offline") {
-      setNotes(loadNotesFromStorage());
-      setCleanupRequest((n) => n + 1);
+      const loadLocalNotes = () => {
+        setNotes(loadNotesFromStorage());
+        setCleanupRequest((n) => n + 1);
+      };
+      if (SIMULATED_OFFLINE_LOAD_MS > 0) {
+        setWaitingResponse("gettingNotes");
+        const timer = setTimeout(() => {
+          loadLocalNotes();
+          setWaitingResponse("none");
+        }, SIMULATED_OFFLINE_LOAD_MS);
+        return () => {
+          clearTimeout(timer);
+          setWaitingResponse("none");
+        };
+      }
+      loadLocalNotes();
     }
   }, [isLogged]);
 
