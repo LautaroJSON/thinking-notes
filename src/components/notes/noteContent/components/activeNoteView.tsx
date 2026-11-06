@@ -20,7 +20,6 @@ import {
   Pencil,
   Trash2,
   Search,
-  X,
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNoteSearch } from "@/hooks/useNoteSearch";
@@ -308,14 +307,47 @@ const ActiveNoteView = () => {
           <span>{formatIdeasCount(ActiveNote?.thinkings.length ?? 0)}</span>
         </div>
         <div className="title-actions">
-          <button
-            onClick={() => setIsSearchOpen((prev) => !prev)}
-            className="action-btn search-toggle"
-            title="Buscar (Ctrl+F)"
-            aria-pressed={isSearchOpen}
-          >
-            <Search size={17} />
-          </button>
+          {/* El campo se despliega hacia la izquierda desde el ícono. Queda
+              montado al cerrarse para que también se anime la salida. */}
+          <div className={`search-inline${isSearchOpen ? " open" : ""}`}>
+            <div
+              className={`search-field${query && matchCount === 0 ? " no-results" : ""}`}
+              inert={!isSearchOpen}
+            >
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar en esta nota..."
+                className="search-input"
+                aria-label="Buscar en esta nota"
+              />
+              {query && (
+                <span
+                  className="search-count"
+                  aria-live="polite"
+                  title={
+                    matchCount === 0
+                      ? "Sin resultados"
+                      : `${matchCount} coincidencia${matchCount !== 1 ? "s" : ""}`
+                  }
+                >
+                  {matchCount}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() =>
+                isSearchOpen ? handleCloseSearch() : setIsSearchOpen(true)
+              }
+              className="action-btn search-toggle"
+              title={isSearchOpen ? "Cerrar búsqueda (Esc)" : "Buscar (Ctrl+F)"}
+              aria-pressed={isSearchOpen}
+            >
+              <Search size={17} />
+            </button>
+          </div>
           <CopyButton
             getText={() => (ActiveNote ? formatNoteForCopy(ActiveNote) : "")}
             label="Copiar nota"
@@ -329,34 +361,6 @@ const ActiveNoteView = () => {
           />
         </div>
       </div>
-
-      {isSearchOpen && (
-        <div className="search-bar">
-          <Search size={15} className="search-icon" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar en esta nota..."
-            className="search-input"
-          />
-          {query && (
-            <span className="search-count">
-              {matchCount === 0
-                ? "Sin resultados"
-                : `${matchCount} coincidencia${matchCount !== 1 ? "s" : ""}`}
-            </span>
-          )}
-          <button
-            onClick={handleCloseSearch}
-            className="action-btn"
-            title="Cerrar (Esc)"
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
 
       <div className="note-heading">
         <input
