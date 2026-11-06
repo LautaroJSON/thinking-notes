@@ -15,11 +15,14 @@ export const NoteItem = ({
   title,
   onDobleClick,
   disabled = false,
+  enterIndex,
 }: {
   id: string;
   title: string;
   onDobleClick: () => void;
   disabled?: boolean;
+  // Posición en la animación de entrada escalonada; sin valor, no se anima
+  enterIndex?: number;
 }) => {
   const { getActiveNote } = useNotes();
   const activeNote = getActiveNote();
@@ -32,17 +35,19 @@ export const NoteItem = ({
     isDragging,
   } = useSortable({ id, disabled });
 
-  const style: CSSProperties = {
+  const style: CSSProperties & { "--enter-index"?: number } = {
     // Solo traslación: CSS.Transform incluye scaleX/scaleY cuando las notas
     // tienen anchos distintos (hover/activa) y eso deforma la card.
     transform: CSS.Translate.toString(transform),
     transition: [transition, WIDTH_TRANSITION].filter(Boolean).join(", "),
+    "--enter-index": enterIndex,
   };
 
   const classNames = [
     "note-item-container",
     id === activeNote?.id ? "active" : "",
     isDragging ? "dragging" : "",
+    enterIndex !== undefined ? "entering" : "",
   ]
     .filter(Boolean)
     .join(" ");
