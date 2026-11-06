@@ -1,3 +1,28 @@
+.note-stage {
+  position: relative;
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (min-width: 769px) {
+  .no-active-note {
+    inset: 14px 14px 14px 0;
+  }
+}
+
+/* Celular: el sidebar sigue en el flujo de la página (la píldora o el panel
+   abierto ocupan alto), así que el escenario se fija arriba de todo para que
+   abrir o cerrar el sidebar no lo empuje hacia abajo */
+@media (max-width: 768px) {
+  .note-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
 .note-c-container {
   position: relative;
   display: flex;
@@ -10,6 +35,30 @@
   background-color: var(--surface);
 
   overflow: hidden;
+}
+
+/* Escritorio: el panel flota como una tarjeta separada del borde */
+@media (min-width: 769px) {
+  .note-c-container {
+    width: calc(100% - 14px);
+    height: calc(100vh - 28px);
+    height: calc(100dvh - 28px);
+    margin: 14px 14px 14px 0;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  }
+}
+
+/* Mientras entra o se va (ver noteLaunch.ts), por encima del sidebar
+   (z-index 2) para que se vea salir de la nota y volver a ella */
+.note-c-container.is-launching {
+  will-change: transform, clip-path, opacity, filter;
+}
+
+@media (min-width: 769px) {
+  .note-c-container.is-launching {
+    z-index: 3;
+  }
 }
 
 .note-c-container::after {
@@ -75,7 +124,11 @@
 
 /* Título como parte del contenido, alineado con las ideas */
 .note-heading {
-  padding: 24px 20px 0;
+  width: 100%;
+  max-width: calc(var(--reading-width) + 40px);
+  margin-inline: auto;
+  padding: 20px 20px 0;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
@@ -100,7 +153,7 @@
 .title-input {
   width: 100%;
   padding: 0;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -114,6 +167,10 @@
 
 .title-input::placeholder {
   color: var(--text-faint);
+}
+
+.note-c-container {
+  --reading-width: 720px;
 }
 
 .thinking-list {
@@ -174,6 +231,10 @@
 
 /* Campo de nueva idea: recuadro redondeado que crece con el texto */
 .composer {
+  width: 100%;
+  max-width: var(--reading-width);
+  margin-inline: auto;
+  box-sizing: border-box;
   display: flex;
   align-items: flex-end;
   gap: 6px;
@@ -251,9 +312,27 @@
 
 .composer-hint {
   flex-shrink: 0;
-  margin: 12px 0 6px 16px;
+  width: 100%;
+  max-width: var(--reading-width);
+  max-height: 0;
+  margin: 8px auto 0;
+  padding-left: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  opacity: 0;
   font-size: 0.72rem;
   color: var(--text-subtle);
+  transition:
+    opacity 0.2s ease,
+    max-height 0.2s ease,
+    margin 0.2s ease;
+}
+
+/* Aparece solo mientras se escribe en el cuadro de texto */
+.thinking-list:has(.composer:focus-within) .composer-hint {
+  max-height: 20px;
+  margin: 10px auto 6px;
+  opacity: 1;
 }
 
 /* En pantallas táctiles el botón de enviar ya es la forma de agregar */
@@ -264,6 +343,7 @@
 
   .composer {
     margin-top: 12px;
+    margin-inline: auto;
   }
 }
 
@@ -298,7 +378,11 @@
 }
 
 .dictation-message {
-  margin: 6px 4px 0;
+  width: 100%;
+  max-width: var(--reading-width);
+  margin: 6px auto 0;
+  padding-inline: 4px;
+  box-sizing: border-box;
   font-size: 0.85rem;
   color: var(--text-muted);
   animation: dictationFadeIn 0.2s ease-out;
@@ -361,8 +445,8 @@
 
 /* Cada idea: viñeta lila a la altura de la primera línea, con aire entre ideas */
 .thinking-text-container {
-  --thinking-pad-y: 10px;
-  --thinking-line: 1.6;
+  --thinking-pad-y: 5px;
+  --thinking-line: 1.55;
   position: relative;
   display: flex;
   flex-shrink: 0;
@@ -390,6 +474,63 @@
 
 .thinking-text-container:hover {
   background-color: var(--surface-muted);
+}
+
+/* Decorados de las ideas (se eligen en Personalizar; ver thinkingBullet.ts).
+   Sin data-bullet se usa el punto de arriba */
+.thinkings-container {
+  counter-reset: thinking;
+}
+
+/* Línea: acompaña todo el alto de la idea */
+:root[data-bullet="line"] .thinking-text-container {
+  padding-left: 16px;
+}
+
+:root[data-bullet="line"] .thinking-text-container::before {
+  top: 3px;
+  bottom: 3px;
+  left: 4px;
+  width: 2px;
+  height: auto;
+  border-radius: 2px;
+}
+
+/* Números: 1, 2, 3… en el orden de la nota */
+:root[data-bullet="number"] .thinking-text-container {
+  counter-increment: thinking;
+  padding-left: 34px;
+}
+
+:root[data-bullet="number"] .thinking-text-container::before {
+  content: counter(thinking);
+  top: var(--thinking-pad-y);
+  left: 4px;
+  width: 22px;
+  height: auto;
+  border-radius: 4px;
+  background: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: calc(0.95rem * var(--thinking-line));
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-color);
+}
+
+:root[data-bullet="number"] .thinking-has-match::before {
+  box-shadow: none;
+  background-color: var(--highlight);
+  color: var(--on-highlight);
+}
+
+/* Nada: solo el texto */
+:root[data-bullet="none"] .thinking-text-container {
+  padding-left: 12px;
+}
+
+:root[data-bullet="none"] .thinking-text-container::before {
+  display: none;
 }
 
 .thinking-text {
@@ -501,25 +642,169 @@
   }
 }
 
+/* Sin nota abierta: tarjeta de vidrio sobre el fondo de la app */
 .no-active-note {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Aparece mientras el panel se va (el retraso deja arrancar el cierre) */
+  transition:
+    opacity 0.45s ease 0.15s,
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) 0.15s,
+    filter 0.45s ease 0.15s,
+    visibility 0s;
+}
+
+/* Con nota abierta queda tapada por el panel; se oculta recién cuando el
+   panel terminó de entrar, para que no desaparezca de golpe detrás */
+.note-stage.has-note .no-active-note {
+  opacity: 0;
+  transform: scale(0.96);
+  filter: blur(6px);
+  visibility: hidden;
+  transition:
+    opacity 0s 0.5s,
+    transform 0s 0.5s,
+    filter 0s 0.5s,
+    visibility 0s 0.5s;
+}
+
+/* Manchas de color que se mueven lento: le dan al vidrio algo que desenfocar */
+.no-active-note-orbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.no-active-note-orbs span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.7;
+}
+
+.no-active-note-orbs span:nth-child(1) {
+  width: 260px;
+  height: 260px;
+  left: 18%;
+  top: 14%;
+  background: var(--glass-orb-1);
+  animation: orb-drift-1 14s ease-in-out infinite alternate;
+}
+
+.no-active-note-orbs span:nth-child(2) {
+  width: 220px;
+  height: 220px;
+  right: 14%;
+  top: 34%;
+  background: var(--glass-orb-2);
+  animation: orb-drift-2 17s ease-in-out infinite alternate;
+}
+
+.no-active-note-orbs span:nth-child(3) {
+  width: 180px;
+  height: 180px;
+  left: 40%;
+  bottom: 8%;
+  background: var(--glass-orb-3);
+  animation: orb-drift-3 12s ease-in-out infinite alternate;
+}
+
+/* Tapadas por el panel no hace falta moverlas */
+.note-stage.has-note .no-active-note-orbs span {
+  animation-play-state: paused;
+}
+
+@keyframes orb-drift-1 {
+  to {
+    transform: translate(60px, 40px) scale(1.1);
+  }
+}
+
+@keyframes orb-drift-2 {
+  to {
+    transform: translate(-70px, -30px) scale(0.9);
+  }
+}
+
+@keyframes orb-drift-3 {
+  to {
+    transform: translate(-40px, -50px) scale(1.15);
+  }
+}
+
+.no-active-note-card {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  padding: 28px 36px 22px;
+  box-sizing: border-box;
+  overflow: hidden;
   text-align: center;
-  font-size: 1.2rem;
-  color: var(--text-muted);
+  font-size: 1.1rem;
   font-style: italic;
+  color: var(--text-muted);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+
+/* Reflejo suave en la esquina, como luz sobre el vidrio */
+.no-active-note-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--glass-shine), transparent 45%);
+  pointer-events: none;
+}
+
+.no-active-note-card p {
+  margin: 0;
 }
 
 .ascii-art {
+  margin: 18px 0 0;
   border: none;
-  margin-top: 20px;
-  font-size: 14px;
-  line-height: 18px;
-  user-select: none; /* Opcional: evita que el usuario seleccione el arte por error */
-  color: var(--text-muted); /* Un color más claro que el texto */
+  font-size: 13px;
+  line-height: 16px;
+  font-style: normal;
+  user-select: none;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .no-active-note-card {
+    padding: 22px 20px 18px;
+    font-size: 1rem;
+  }
+
+  .ascii-art {
+    font-size: 10px;
+    line-height: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .no-active-note,
+  .note-stage.has-note .no-active-note {
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .no-active-note-orbs span {
+    animation: none;
+  }
 }
 
 @media (max-width: 768px) {
@@ -542,7 +827,7 @@
   }
 
   .title-input {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
   /* Deja lugar para el número de versión debajo del cuadro de texto */
@@ -583,10 +868,11 @@
 }
 
 .thinkings-container {
-  /* max-height: 100%; */
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  /* Centra las ideas en el ancho de lectura sin mover la barra de scroll */
+  padding-inline: max(0px, (100% - var(--reading-width)) / 2);
   flex-grow: 1;
   overflow-y: auto;
 }
