@@ -28,7 +28,15 @@ import useAuthentication from "@/hooks/useAuthentication";
 import { supabase } from "../../../lib/supabaseClient";
 import ProfileModal from "../profile";
 import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
+import { NotesSkeleton } from "../notes/noteItem/notesSkeleton";
 import ThemeSelector from "../themeSelector";
+
+// Duración de la transición esqueleto → notas: el esqueleto se desvanece
+// mientras las notas entran escalonadas (ver noteItem/styles.css).
+const REVEAL_MS = 1700;
+// Las notas a partir de esta posición entran todas juntas, para que una
+// lista larga no tarde en terminar de aparecer.
+const MAX_STAGGERED_NOTES = 10;
 
 // Tiempo que se muestra el aviso de error al guardar el orden
 const REORDER_ERROR_TIMEOUT_MS = 4000;
@@ -91,6 +99,23 @@ const Sidebar = () => {
     }),
   );
   const isReorderDisabled = waitingResponse !== "none";
+
+  // Al terminar de cargar las notas se arranca la transición de entrada.
+  // Se detecta durante el render (y no en un efecto) para que el primer
+  // frame con notas ya salga con la animación, sin un parpadeo previo.
+  const [prevWaitingResponse, setPrevWaitingResponse] =
+    useState(waitingResponse);
+  const [isRevealing, setIsRevealing] = useState(false);
+  if (prevWaitingResponse !== waitingResponse) {
+    setPrevWaitingResponse(waitingResponse);
+    if (prevWaitingResponse === "gettingNotes") setIsRevealing(true);
+  }
+
+  useEffect(() => {
+    if (!isRevealing) return;
+    const timeout = setTimeout(() => setIsRevealing(false), REVEAL_MS);
+    return () => clearTimeout(timeout);
+  }, [isRevealing]);
 
   useEffect(() => {
     if (!reorderError) return;
@@ -246,11 +271,16 @@ const Sidebar = () => {
               items={notes.map((note) => note.id!)}
               strategy={verticalListSortingStrategy}
             >
-              {notes.map((note) => (
+              {notes.map((note, index) => (
                 <NoteItem
                   id={note.id!}
                   key={note.id!}
                   title={note.title}
+                  enterIndex={
+                    isRevealing
+                      ? Math.min(index, MAX_STAGGERED_NOTES)
+                      : undefined
+                  }
                   disabled={isReorderDisabled}
                   onDobleClick={() => handleSecActiveNote(note.id!)}
                 />
@@ -261,11 +291,10 @@ const Sidebar = () => {
         {!collapsed && waitingResponse === "creatingNote" && (
           <FakeItemLoading />
         )}
-        {!collapsed && waitingResponse === "gettingNotes" && (
-          <div className="sidebar-getting-notes-container ">
-            <Loader2 size={32} className="spinner-icon" />
-          </div>
-        )}
+        {!collapsed &&
+          (waitingResponse === "gettingNotes" || isRevealing) && (
+            <NotesSkeleton leaving={isRevealing} />
+          )}
       </div>
       {!collapsed && (
         <div className="sidebar-footer">
