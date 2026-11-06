@@ -4,6 +4,7 @@
   justify-self: end;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   box-shadow: var(--shadow-panel);
   background-color: var(--surface);
@@ -526,6 +527,7 @@
     top: 0;
     position: absolute;
     height: 100vh;
+    height: 100dvh;
   }
 
   /* El botón flotante del sidebar ocupa la esquina superior izquierda */

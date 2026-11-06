@@ -21,6 +21,7 @@ export default defineConfig({
         short_name: "Notes",
         description: "Mi app de notas con pensamientos",
         theme_color: "#ffffff",
+        display: "standalone",
         icons: [
           {
             src: "iconoapp.png",

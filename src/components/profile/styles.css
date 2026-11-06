@@ -86,6 +86,7 @@
   .profile-modal-content {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     max-width: none;
     border-radius: 0;
     padding: 40px 20px;

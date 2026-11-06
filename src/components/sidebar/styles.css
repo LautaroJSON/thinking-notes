@@ -18,6 +18,7 @@
 .sidebar-container {
   width: 300px;
   height: 85vh;
+  height: 85dvh;
   padding: 20px 0px 20px 0px;
   box-sizing: border-box;
 

@@ -20,6 +20,18 @@ p {
   font-style: normal;
 }
 
+/* La app ocupa exactamente la pantalla visible: el documento nunca scrollea.
+   En Chrome Android 100vh mide la pantalla con la barra de direcciones
+   oculta, así que la página quedaba más alta que lo visible y se podía
+   arrastrar todo (escondiendo la barra de la nota y el sidebar). Cada panel
+   scrollea por dentro. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   background-image: var(--bg-gradient);
   color: var(--text-base);
