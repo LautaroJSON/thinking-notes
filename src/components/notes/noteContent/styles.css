@@ -706,12 +706,18 @@
   border-radius: 18px;
 }
 
+/* El campo necesita un ancho mínimo: con flex-basis 0 cabría en la fila de
+   la bandeja con ancho ~0 y no se podría escribir */
+.composer.has-images .composer-input {
+  min-width: 120px;
+}
+
 .image-tray {
   display: flex;
-  flex-basis: 100%;
+  flex: 0 0 100%;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 4px 0 6px -6px;
+  margin: 4px 0 6px;
   padding: 0;
   list-style: none;
 }
