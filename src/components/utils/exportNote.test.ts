@@ -27,7 +27,7 @@ describe("noteToMarkdown", () => {
     );
   });
 
-  it("representa las imágenes con [Imagen] seguidas de su texto", () => {
+  it("representa las imágenes con [Imagen] después de su texto", () => {
     expect(
       noteToMarkdown({
         title: "T",
@@ -36,7 +36,7 @@ describe("noteToMarkdown", () => {
           { id: "i2", type: "image", value: ["local:b", "local:c"], text: "pie" },
         ],
       }),
-    ).toBe("# T\n\n- [Imagen]\n- [Imagen] [Imagen] pie\n");
+    ).toBe("# T\n\n- [Imagen]\n- pie [Imagen] [Imagen]\n");
   });
 });
 
@@ -89,7 +89,7 @@ describe("downloadNoteAsPdf", () => {
   const writtenTexts = () =>
     docMock.text.mock.calls.map((call) => call[0] as string);
 
-  it("agrega cada imagen en orden al ancho útil y luego su texto", async () => {
+  it("escribe primero el texto y después cada imagen al ancho útil", async () => {
     const getImageBlob = vi.fn(async (_ref: string) => new Blob([_ref]));
 
     await downloadNoteAsPdf(
@@ -114,6 +114,11 @@ describe("downloadNoteAsPdf", () => {
     expect(width).toBe(165);
     expect(height).toBeCloseTo(165 * (900 / 1600));
     expect(writtenTexts()).toEqual(["T", "•", "antes", "•", "pie"]);
+    // El texto que acompaña va antes que las imágenes
+    const pieCall = docMock.text.mock.calls.findIndex((c) => c[0] === "pie");
+    expect(docMock.text.mock.invocationCallOrder[pieCall]).toBeLessThan(
+      docMock.addImage.mock.invocationCallOrder[0],
+    );
     expect(docMock.save).toHaveBeenCalledWith("T.pdf");
   });
 

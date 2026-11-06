@@ -885,8 +885,13 @@ describe("NotesProvider", () => {
       await flush();
 
       expect(screen.queryByLabelText("Quitar imagen 1")).toBeNull();
-      expect(screen.getByLabelText("Ver imagen 1 de 2")).toBeTruthy();
-      expect(screen.getByText("captura")).toBeTruthy();
+      const thumb = screen.getByLabelText("Ver imagen 1 de 2");
+      const caption = screen.getByText("captura");
+      // Primero el texto y después las imágenes
+      expect(
+        caption.compareDocumentPosition(thumb) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)[0];
       expect(saved.thinkings[1]).toMatchObject({
         type: "image",
@@ -939,6 +944,80 @@ describe("NotesProvider", () => {
       expect(screen.getByRole("alert").textContent).toBe(
         "Solo se pueden pegar imágenes.",
       );
+    });
+  });
+  describe("scroll de la lista de ideas", () => {
+    let scrollTopSet: ReturnType<typeof vi.fn<(value: number) => void>>;
+    const descriptors = {
+      scrollHeight: Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        "scrollHeight",
+      ),
+      scrollTop: Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        "scrollTop",
+      ),
+      clientHeight: Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        "clientHeight",
+      ),
+    };
+
+    beforeEach(() => {
+      mockSession(false);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([SAVED_NOTE]));
+      scrollTopSet = vi.fn<(value: number) => void>();
+      // jsdom no calcula layout: se simula una lista más alta que su caja
+      Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+        configurable: true,
+        get: () => 900,
+      });
+      Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+        configurable: true,
+        get: () => 300,
+      });
+      Object.defineProperty(HTMLElement.prototype, "scrollTop", {
+        configurable: true,
+        get: () => 0,
+        set: scrollTopSet,
+      });
+    });
+
+    afterEach(() => {
+      for (const [key, descriptor] of Object.entries(descriptors)) {
+        if (descriptor) {
+          Object.defineProperty(HTMLElement.prototype, key, descriptor);
+        } else {
+          delete (HTMLElement.prototype as unknown as Record<string, unknown>)[
+            key
+          ];
+        }
+      }
+    });
+
+    const listScrolls = () =>
+      scrollTopSet.mock.contexts.filter(
+        (el) => (el as HTMLElement).classList?.contains("thinkings-container"),
+      ).length;
+
+    it("al agregar una idea lleva la lista al final", async () => {
+      await renderEditor();
+      expect(listScrolls()).toBe(0);
+
+      const input = screen.getByLabelText("Nueva idea");
+      fireEvent.change(input, { target: { value: "nueva idea" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(listScrolls()).toBe(1);
+      expect(scrollTopSet).toHaveBeenLastCalledWith(900);
+    });
+
+    it("no se mueve al borrar una idea", async () => {
+      await renderEditor();
+
+      fireEvent.click(screen.getByTitle("Borrar"));
+
+      expect(listScrolls()).toBe(0);
     });
   });
 });

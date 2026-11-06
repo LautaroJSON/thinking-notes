@@ -3,15 +3,15 @@ import { isImageThinking, isTextThinking } from "@/types/thinking";
 
 export const IMAGE_PLACEHOLDER = "[Imagen]";
 
-// Representación en texto plano de un pensamiento: el texto tal cual, o un
-// marcador "[Imagen]" por cada imagen seguido del texto que las acompaña.
+// Representación en texto plano de un pensamiento: el texto tal cual, o el
+// texto que acompaña a las imágenes seguido de un "[Imagen]" por cada una.
 // Los tipos desconocidos no tienen representación ("").
 export const thinkingToPlainText = (thinking: Thinking): string => {
   if (isTextThinking(thinking)) return thinking.value.trim();
   if (isImageThinking(thinking)) {
     const markers = thinking.value.map(() => IMAGE_PLACEHOLDER);
     const text = thinking.text?.trim();
-    return [...markers, ...(text ? [text] : [])].join(" ");
+    return [...(text ? [text] : []), ...markers].join(" ");
   }
   return "";
 };

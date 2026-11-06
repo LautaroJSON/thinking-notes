@@ -2,7 +2,11 @@ import { useState } from "react";
 import { ImageOff, LoaderCircle, X } from "lucide-react";
 import type { Segment } from "@/hooks/useNoteSearch";
 import { useImageUrls, type ImageUrlState } from "@/hooks/useImageUrls";
-import { isLocalRef, type ImageRef, type ImageThinking } from "@/types/thinking";
+import {
+  isLocalRef,
+  type ImageRef,
+  type ImageThinking,
+} from "@/types/thinking";
 import HighlightedText from "./highlightedText";
 import ImageViewer from "./imageViewer";
 
@@ -11,16 +15,27 @@ interface ThumbProps {
   state: ImageUrlState;
   label: string;
   onRetry: (ref: ImageRef) => void;
+  onLoad?: () => void;
 }
 
 // Una miniatura con sus estados: cargando, lista o no disponible
-const ImageThumb = ({ imageRef, state, label, onRetry }: ThumbProps) => {
+const ImageThumb = ({
+  imageRef,
+  state,
+  label,
+  onRetry,
+  onLoad,
+}: ThumbProps) => {
   const [failed, setFailed] = useState(false);
   const [retried, setRetried] = useState(false);
 
   if (state.status === "loading") {
     return (
-      <span className="image-thumb-placeholder" role="status" aria-label="Cargando imagen">
+      <span
+        className="image-thumb-placeholder"
+        role="status"
+        aria-label="Cargando imagen"
+      >
         <LoaderCircle size={18} className="loading-icon" />
       </span>
     );
@@ -40,6 +55,7 @@ const ImageThumb = ({ imageRef, state, label, onRetry }: ThumbProps) => {
       loading="lazy"
       decoding="async"
       draggable={false}
+      onLoad={onLoad}
       onError={() => {
         // Una URL firmada puede haber vencido: se pide una nueva una sola vez
         if (!retried && !isLocalRef(imageRef)) {
@@ -59,16 +75,19 @@ interface Props {
   isEditing: boolean;
   onEditDone: (changes: { removedRefs: ImageRef[]; text: string }) => void;
   onEditCancel: () => void;
+  /** Se llama cuando termina de cargar una miniatura (cambia la altura). */
+  onImageLoad?: () => void;
 }
 
-// Pensamiento con imágenes: miniaturas agrupadas, texto debajo y visor
-// ampliado. En modo edición permite quitar imágenes y cambiar el texto.
+// Pensamiento con imágenes: el texto arriba, las miniaturas agrupadas debajo y
+// un visor ampliado. En modo edición permite quitar imágenes y cambiar el texto.
 const ImageThinkingView = ({
   thinking,
   segments,
   isEditing,
   onEditDone,
   onEditCancel,
+  onImageLoad,
 }: Props) => {
   const refs = thinking.value;
   const { getState, refresh } = useImageUrls(refs);
@@ -93,53 +112,55 @@ const ImageThinkingView = ({
   const confirmEdit = () =>
     onEditDone({ removedRefs: removed, text: draftText });
 
+  const grid = visible.length > 0 && (
+    <div className={`image-grid count-${Math.min(visible.length, 5)}`}>
+      {visible.map((ref) => {
+        const i = refs.indexOf(ref);
+        return (
+          <div key={ref} className="image-grid-item">
+            {isEditing ? (
+              <>
+                <ImageThumb
+                  imageRef={ref}
+                  state={getState(ref)}
+                  label={label(i)}
+                  onRetry={refresh}
+                  onLoad={onImageLoad}
+                />
+                <button
+                  type="button"
+                  className="image-tray-remove"
+                  onClick={() => setRemoved((prev) => [...prev, ref])}
+                  aria-label={`Quitar imagen ${i + 1}`}
+                  title="Quitar imagen"
+                >
+                  <X size={12} />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="image-thumb-btn"
+                onClick={() => setOpenIndex(i)}
+                aria-label={`Ver imagen ${i + 1} de ${total}`}
+              >
+                <ImageThumb
+                  imageRef={ref}
+                  state={getState(ref)}
+                  label={label(i)}
+                  onRetry={refresh}
+                  onLoad={onImageLoad}
+                />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="image-thinking">
-      {visible.length > 0 && (
-        <div className={`image-grid count-${Math.min(visible.length, 5)}`}>
-          {visible.map((ref) => {
-            const i = refs.indexOf(ref);
-            return (
-              <div key={ref} className="image-grid-item">
-                {isEditing ? (
-                  <>
-                    <ImageThumb
-                      imageRef={ref}
-                      state={getState(ref)}
-                      label={label(i)}
-                      onRetry={refresh}
-                    />
-                    <button
-                      type="button"
-                      className="image-tray-remove"
-                      onClick={() => setRemoved((prev) => [...prev, ref])}
-                      aria-label={`Quitar imagen ${i + 1}`}
-                      title="Quitar imagen"
-                    >
-                      <X size={12} />
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="image-thumb-btn"
-                    onClick={() => setOpenIndex(i)}
-                    aria-label={`Ver imagen ${i + 1} de ${total}`}
-                  >
-                    <ImageThumb
-                      imageRef={ref}
-                      state={getState(ref)}
-                      label={label(i)}
-                      onRetry={refresh}
-                    />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {isEditing ? (
         <div className="image-thinking-edit">
           <textarea
@@ -160,6 +181,7 @@ const ImageThinkingView = ({
               }
             }}
           />
+          {grid}
           {visible.length === 0 && (
             <p className="image-thinking-hint">
               {draftText.trim()
@@ -168,7 +190,11 @@ const ImageThinkingView = ({
             </p>
           )}
           <div className="image-thinking-edit-actions">
-            <button type="button" className="btn-secondary" onClick={onEditCancel}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onEditCancel}
+            >
               Cancelar
             </button>
             <button type="button" className="btn-primary" onClick={confirmEdit}>
@@ -177,11 +203,19 @@ const ImageThinkingView = ({
           </div>
         </div>
       ) : (
-        thinking.text && (
-          <span className="thinking-text">
-            {segments ? <HighlightedText segments={segments} /> : thinking.text}
-          </span>
-        )
+        <>
+          {/* Primero el texto y después las imágenes */}
+          {thinking.text && (
+            <span className="thinking-text">
+              {segments ? (
+                <HighlightedText segments={segments} />
+              ) : (
+                thinking.text
+              )}
+            </span>
+          )}
+          {grid}
+        </>
       )}
 
       <ImageViewer

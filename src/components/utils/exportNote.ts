@@ -172,11 +172,12 @@ export const downloadNoteAsPdf = async (
       if (!text) continue;
       writeText(text, true);
     } else if (isImageThinking(thinking)) {
-      for (const [i, ref] of thinking.value.entries()) {
-        await writeImage(ref, i === 0);
-      }
+      // Primero el texto que acompaña y después las imágenes
       const text = thinking.text?.trim();
-      if (text) writeText(text, false);
+      if (text) writeText(text, true);
+      for (const [i, ref] of thinking.value.entries()) {
+        await writeImage(ref, !text && i === 0);
+      }
     } else {
       continue;
     }

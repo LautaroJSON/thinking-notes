@@ -44,7 +44,7 @@ describe("formatNoteForCopy", () => {
         ],
       }),
     ).toBe(
-      "Título: T\n\nNotas:\nantes\n[Imagen]\n[Imagen] [Imagen] captura del error",
+      "Título: T\n\nNotas:\nantes\n[Imagen]\ncaptura del error [Imagen] [Imagen]",
     );
   });
 });

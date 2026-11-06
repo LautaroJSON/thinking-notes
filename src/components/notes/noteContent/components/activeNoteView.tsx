@@ -79,6 +79,10 @@ const ActiveNoteView = () => {
     setDraft(loadDraft(activeNoteId));
   }
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // Si la lista está "pegada" al final, sigue ahí cuando crece (p. ej. al
+  // terminar de cargar las miniaturas de la idea recién enviada)
+  const stickToBottomRef = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedActiveNote = useDebounce(editedNote, 2000);
   // Imágenes sin enviar: cada nota tiene las suyas, como el borrador de texto
@@ -247,6 +251,36 @@ const ActiveNoteView = () => {
     el.style.height = `${el.scrollHeight}px`;
   }, [composedDraft]);
 
+  const scrollListToBottom = () => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+    stickToBottomRef.current = true;
+  };
+
+  // Al agregar una idea a la nota abierta, se lleva la lista al final para
+  // verla (no al abrir la nota ni al cambiar de nota)
+  const thinkingsCount = ActiveNote?.thinkings.length ?? 0;
+  const lastCountRef = useRef({ noteId: activeNoteId, count: thinkingsCount });
+  useLayoutEffect(() => {
+    const last = lastCountRef.current;
+    lastCountRef.current = { noteId: activeNoteId, count: thinkingsCount };
+    if (last.noteId === activeNoteId && thinkingsCount > last.count) {
+      scrollListToBottom();
+    }
+  }, [activeNoteId, thinkingsCount]);
+
+  const handleListScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    stickToBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  };
+
+  const handleImageLoad = () => {
+    if (stickToBottomRef.current) scrollListToBottom();
+  };
+
   const handleDeleteThinking = (thinkingId: string) => {
     if (editingId === thinkingId) setEditingId(null);
     removeThinking(thinkingId);
@@ -336,7 +370,11 @@ const ActiveNoteView = () => {
       </div>
 
       <div className="thinking-list">
-        <div className="thinkings-container">
+        <div
+          className="thinkings-container"
+          ref={listRef}
+          onScroll={handleListScroll}
+        >
           {ActiveNote?.thinkings.map((thinking) => {
             const segments = matchMap.get(thinking.id);
             const hasMatch = !!segments;
@@ -358,6 +396,7 @@ const ActiveNoteView = () => {
                         setEditingId(null);
                       }}
                       onEditCancel={() => setEditingId(null)}
+                      onImageLoad={handleImageLoad}
                     />
                   ) : (
                     <span className="thinking-text thinking-unsupported">

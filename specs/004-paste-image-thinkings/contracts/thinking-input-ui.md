@@ -23,7 +23,7 @@ Dictado: sigue igual; el texto dictado va como texto acompañante si hay imágen
 | Tipo | Render |
 |---|---|
 | `text` | Igual que hoy. |
-| `image` | Grupo de miniaturas: 1 imagen ocupa el ancho de la columna (alto máximo de unos 240 px); 2 a 5 van en una grilla de 2 a 3 columnas, recortadas con `object-fit: cover`. Debajo, el texto acompañante si lo hay. Cada miniatura es un `<button>` con `aria-label="Ver imagen N de M"`. |
+| `image` | Grupo de miniaturas: 1 imagen ocupa el ancho de la columna (alto máximo de unos 240 px); 2 a 5 van en una grilla de 2 a 3 columnas, recortadas con `object-fit: cover`. Arriba de las miniaturas va el texto acompañante, si lo hay. Cada miniatura es un `<button>` con `aria-label="Ver imagen N de M"`. |
 | desconocido | "Contenido no soportado en esta versión". Se puede borrar. |
 
 - **Mientras carga**: un placeholder con la proporción final, para que la lista no salte.
@@ -54,6 +54,12 @@ Dictado: sigue igual; el texto dictado va como texto acompañante si hay imágen
 - La imagen se muestra con `object-fit: contain`, ocupando como máximo el 90 % del alto y
   del ancho de la pantalla.
 - Con sesión, se usa la URL firmada, sin descargar de nuevo si ya está en caché.
+
+## Scroll de la lista
+
+- Al agregar una idea a la nota abierta, la lista se desplaza al final.
+- Si la lista está al final, se mantiene ahí cuando terminan de cargar las miniaturas.
+- Abrir una nota, cambiar de nota o borrar una idea no mueve la lista.
 
 ## Estado de guardado
 

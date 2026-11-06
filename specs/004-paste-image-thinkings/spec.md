@@ -18,6 +18,7 @@
 - Q: Después de guardar un pensamiento con imágenes, ¿se le pueden agregar o quitar imágenes al editarlo? → A: Al editar se pueden quitar imágenes de a una, pero no agregar nuevas; si se quitan todas y no hay texto, se borra el pensamiento.
 - Q: ¿La API nueva debe aceptar el formato anterior (lista de textos) enviado por versiones viejas de la app? → A: No: todavía no hay usuarios reales, así que no hace falta compatibilidad con versiones viejas; la API y la app usan solo el formato nuevo.
 - Q: (después de la implementación) ¿Qué pasa con las imágenes sin enviar al cambiar de nota? → A: Se conservan por nota, como el borrador de texto, mientras la app está abierta.
+- Q: (después de la implementación) ¿En qué orden se muestran el texto y las imágenes de un pensamiento? → A: Primero el texto y después las imágenes (en la lista, al copiar, en Markdown y en el PDF). Al enviar una idea, la lista se desplaza al final.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -51,7 +52,7 @@ Como usuario, quiero ver los pensamientos de imagen como miniaturas dentro de la
 
 **Escenarios de aceptación**:
 
-1. **Dado** una nota con pensamientos de imagen, **cuando** se abre la nota, **entonces** cada pensamiento con imágenes muestra sus miniaturas agrupadas (en fila, o en grilla si son varias) en su posición dentro de la lista, con su texto acompañante debajo si lo tiene, intercalado con los pensamientos de solo texto.
+1. **Dado** una nota con pensamientos de imagen, **cuando** se abre la nota, **entonces** cada pensamiento con imágenes muestra sus miniaturas agrupadas (en fila, o en grilla si son varias) en su posición dentro de la lista, con su texto acompañante arriba de las miniaturas si lo tiene, intercalado con los pensamientos de solo texto.
 2. **Dado** una miniatura, **cuando** el usuario la toca o hace clic, **entonces** la imagen se abre en grande ocupando la mayor parte de la pantalla.
 3. **Dado** una imagen abierta en grande, **cuando** el usuario la cierra (botón de cerrar, tocar fuera de la imagen o Escape en escritorio), **entonces** vuelve a la nota en el mismo lugar donde estaba.
 6. **Dado** un pensamiento con varias imágenes abierto en grande, **cuando** el usuario usa los controles de anterior/siguiente (o las flechas del teclado, o desliza en el celular), **entonces** pasa a las otras imágenes del mismo pensamiento.
@@ -177,7 +178,8 @@ Como usuario, quiero exportar a PDF una nota que tiene imágenes y que las imág
 
 **Visualización**
 
-- **FR-016**: Los pensamientos con imágenes DEBEN mostrar sus miniaturas agrupadas en su posición dentro de la lista de pensamientos, seguidas del texto acompañante si lo hay.
+- **FR-016**: Los pensamientos con imágenes DEBEN mostrar, en su posición dentro de la lista, primero el texto acompañante (si lo hay) y debajo sus miniaturas agrupadas.
+- **FR-016b**: Al agregar un pensamiento a la nota abierta, la lista DEBE desplazarse hasta el final para mostrarlo (también cuando terminan de cargar sus miniaturas), salvo que el usuario haya desplazado la lista hacia arriba.
 - **FR-017**: Al tocar una miniatura, el sistema DEBE abrir la imagen en grande, permitir pasar a las demás imágenes del mismo pensamiento (anterior/siguiente, flechas del teclado o deslizar) y cerrarla mediante botón, toque fuera de la imagen o Escape.
 - **FR-018**: Mientras la imagen carga, el sistema DEBE mostrar un indicador que ocupe el mismo espacio que la miniatura; si no se puede cargar, DEBE mostrar "Imagen no disponible".
 - **FR-019**: Las miniaturas y la vista ampliada DEBEN tener texto alternativo y poder abrirse y cerrarse con teclado.
@@ -200,8 +202,8 @@ Como usuario, quiero exportar a PDF una nota que tiene imágenes y que las imág
 
 **Exportación y copia**
 
-- **FR-029**: La exportación a PDF DEBE incluir cada imagen en su posición, escalada al ancho útil de la página con su proporción y seguida de su texto acompañante si lo tiene, pasando de página cuando no entre; si una imagen no se puede obtener, DEBE escribir "[Imagen no disponible]" y continuar.
-- **FR-030**: Copiar la nota y exportarla a Markdown DEBE representar cada imagen con el marcador "[Imagen]" en su posición, seguidos del texto acompañante si lo hay (por ejemplo, "[Imagen] [Imagen] captura del error").
+- **FR-029**: La exportación a PDF DEBE incluir cada imagen en su posición, escalada al ancho útil de la página con su proporción y precedida por su texto acompañante si lo tiene, pasando de página cuando no entre; si una imagen no se puede obtener, DEBE escribir "[Imagen no disponible]" y continuar.
+- **FR-030**: Copiar la nota y exportarla a Markdown DEBE representar cada imagen con el marcador "[Imagen]" en su posición, precedidos por el texto acompañante si lo hay (por ejemplo, "captura del error [Imagen] [Imagen]").
 
 ### Contrato de datos (decidido por el usuario)
 
