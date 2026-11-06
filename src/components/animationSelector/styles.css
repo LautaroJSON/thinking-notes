@@ -48,11 +48,17 @@
   animation: animation-menu-in 0.12s ease-out;
 }
 
-/* Pie del panel: se abre hacia arriba, sobre la lista de notas. Va alineado
-   a la derecha del botón porque es el último del pie */
+/* Pie del panel: se abre hacia arriba, sobre la lista de notas. Es el
+   último botón del pie: alineado al botón se saldría del panel, así que se
+   ubica respecto del pie (.sidebar-footer) y arranca donde arrancan los
+   menús de tema y sonido */
+.sidebar-footer .animation-selector {
+  position: static;
+}
+
 .animation-menu--top {
   bottom: calc(100% + 8px);
-  right: 0;
+  left: 16px;
 }
 
 .animation-menu--right {
