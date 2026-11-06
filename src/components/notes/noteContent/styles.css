@@ -1,3 +1,16 @@
+.note-stage {
+  position: relative;
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (min-width: 769px) {
+  .no-active-note {
+    inset: 14px 14px 14px 0;
+  }
+}
+
 .note-c-container {
   position: relative;
   display: flex;
@@ -24,11 +37,10 @@
   }
 }
 
-/* Mientras sale desde la tarjeta: transform desde la esquina y por encima
-   del sidebar (z-index 2), así se ve salir de la nota */
+/* Mientras entra o se va (ver noteLaunch.ts), por encima del sidebar
+   (z-index 2) para que se vea salir de la nota y volver a ella */
 .note-c-container.is-launching {
-  transform-origin: 0 0;
-  will-change: transform, clip-path, opacity;
+  will-change: transform, clip-path, opacity, filter;
 }
 
 @media (min-width: 769px) {
@@ -561,25 +573,169 @@
   }
 }
 
+/* Sin nota abierta: tarjeta de vidrio sobre el fondo de la app */
 .no-active-note {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Aparece mientras el panel se va (el retraso deja arrancar el cierre) */
+  transition:
+    opacity 0.45s ease 0.15s,
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) 0.15s,
+    filter 0.45s ease 0.15s,
+    visibility 0s;
+}
+
+/* Con nota abierta queda tapada por el panel; se oculta recién cuando el
+   panel terminó de entrar, para que no desaparezca de golpe detrás */
+.note-stage.has-note .no-active-note {
+  opacity: 0;
+  transform: scale(0.96);
+  filter: blur(6px);
+  visibility: hidden;
+  transition:
+    opacity 0s 0.5s,
+    transform 0s 0.5s,
+    filter 0s 0.5s,
+    visibility 0s 0.5s;
+}
+
+/* Manchas de color que se mueven lento: le dan al vidrio algo que desenfocar */
+.no-active-note-orbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.no-active-note-orbs span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.7;
+}
+
+.no-active-note-orbs span:nth-child(1) {
+  width: 260px;
+  height: 260px;
+  left: 18%;
+  top: 14%;
+  background: var(--glass-orb-1);
+  animation: orb-drift-1 14s ease-in-out infinite alternate;
+}
+
+.no-active-note-orbs span:nth-child(2) {
+  width: 220px;
+  height: 220px;
+  right: 14%;
+  top: 34%;
+  background: var(--glass-orb-2);
+  animation: orb-drift-2 17s ease-in-out infinite alternate;
+}
+
+.no-active-note-orbs span:nth-child(3) {
+  width: 180px;
+  height: 180px;
+  left: 40%;
+  bottom: 8%;
+  background: var(--glass-orb-3);
+  animation: orb-drift-3 12s ease-in-out infinite alternate;
+}
+
+/* Tapadas por el panel no hace falta moverlas */
+.note-stage.has-note .no-active-note-orbs span {
+  animation-play-state: paused;
+}
+
+@keyframes orb-drift-1 {
+  to {
+    transform: translate(60px, 40px) scale(1.1);
+  }
+}
+
+@keyframes orb-drift-2 {
+  to {
+    transform: translate(-70px, -30px) scale(0.9);
+  }
+}
+
+@keyframes orb-drift-3 {
+  to {
+    transform: translate(-40px, -50px) scale(1.15);
+  }
+}
+
+.no-active-note-card {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  padding: 28px 36px 22px;
+  box-sizing: border-box;
+  overflow: hidden;
   text-align: center;
-  font-size: 1.2rem;
-  color: var(--text-muted);
+  font-size: 1.1rem;
   font-style: italic;
+  color: var(--text-muted);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+
+/* Reflejo suave en la esquina, como luz sobre el vidrio */
+.no-active-note-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--glass-shine), transparent 45%);
+  pointer-events: none;
+}
+
+.no-active-note-card p {
+  margin: 0;
 }
 
 .ascii-art {
+  margin: 18px 0 0;
   border: none;
-  margin-top: 20px;
-  font-size: 14px;
-  line-height: 18px;
-  user-select: none; /* Opcional: evita que el usuario seleccione el arte por error */
-  color: var(--text-muted); /* Un color más claro que el texto */
+  font-size: 13px;
+  line-height: 16px;
+  font-style: normal;
+  user-select: none;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .no-active-note-card {
+    padding: 22px 20px 18px;
+    font-size: 1rem;
+  }
+
+  .ascii-art {
+    font-size: 10px;
+    line-height: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .no-active-note,
+  .note-stage.has-note .no-active-note {
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .no-active-note-orbs span {
+    animation: none;
+  }
 }
 
 @media (max-width: 768px) {

@@ -58,6 +58,7 @@ export const NoteItem = ({
       ref={setNodeRef}
       style={style}
       className={classNames}
+      data-note-id={id}
       onClick={(e) => {
         // El panel de la nota sale desde esta tarjeta (ver noteLaunch.ts)
         setLaunchOrigin(id, e.currentTarget.getBoundingClientRect());

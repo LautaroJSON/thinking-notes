@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  closeAnimation,
   launchKeyframes,
+  openAnimation,
   setLaunchOrigin,
   takeLaunchOrigin,
 } from "./noteLaunch";
@@ -58,5 +60,30 @@ describe("fotogramas de la animación", () => {
 
   it("no anima si algún rectángulo no tiene tamaño", () => {
     expect(launchKeyframes(card, { ...panel, width: 0 })).toBeNull();
+  });
+});
+
+describe("animaciones de apertura y cierre", () => {
+  it("cerrar hacia la tarjeta es la apertura al revés", () => {
+    const open = openAnimation("card", { card, panel, radius: 16 })!;
+    const close = closeAnimation("card", { card, panel, radius: 16 })!;
+
+    expect(close.keyframes[0]).toEqual(open.keyframes.at(-1));
+    expect(close.keyframes.at(-1)).toEqual(open.keyframes[0]);
+    expect(close.transformOrigin).toBe("0 0");
+  });
+
+  it("sin tarjeta visible, «desde la tarjeta» se hunde", () => {
+    const close = closeAnimation("card", { card: null, panel })!;
+    expect(close).toEqual(closeAnimation("sink", { panel }));
+  });
+
+  it("deslizar baja al cerrar y sube al abrir", () => {
+    const close = closeAnimation("slide", { panel })!;
+    const open = openAnimation("slide", { card, panel })!;
+
+    expect(close.keyframes.at(-1)).toMatchObject({ opacity: 0 });
+    expect(open.keyframes[0]).toEqual(close.keyframes.at(-1));
+    expect(open.keyframes.at(-1)).toEqual(close.keyframes[0]);
   });
 });

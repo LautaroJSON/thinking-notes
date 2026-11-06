@@ -31,6 +31,7 @@ import { FakeItemLoading } from "../notes/noteItem/fakeItemLoading";
 import { NotesSkeleton } from "../notes/noteItem/notesSkeleton";
 import ThemeSelector from "../themeSelector";
 import SoundSelector from "../soundSelector";
+import AnimationSelector from "../animationSelector";
 import useSounds from "@/hooks/useSounds";
 
 // Duración de la transición esqueleto → notas: el esqueleto se desvanece
@@ -328,6 +329,7 @@ const Sidebar = () => {
           <div className="sidebar-footer">
             <ThemeSelector />
             <SoundSelector />
+            <AnimationSelector />
           </div>
         )}
         <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />

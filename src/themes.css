@@ -8,6 +8,15 @@
 */
 
 :root {
+  /* Vidrio del fondo sin nota (manchas de color + tarjeta translúcida) */
+  --glass-bg: rgba(255, 255, 255, 0.38);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-shine: rgba(255, 255, 255, 0.35);
+  --glass-shadow: 0 20px 50px rgba(60, 72, 140, 0.18);
+  --glass-orb-1: #9fb8ff;
+  --glass-orb-2: #e6a8ff;
+  --glass-orb-3: #7890ff;
+
   --bg-gradient: linear-gradient(
     to right top,
     #ffffff,
@@ -67,6 +76,14 @@
 }
 
 :root[data-theme="dark"] {
+  --glass-bg: rgba(40, 40, 46, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-shine: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --glass-orb-1: #3b42a8;
+  --glass-orb-2: #5a2f7a;
+  --glass-orb-3: #26306e;
+
   /* Paleta del tema "Oscuro" de Discord (no "Ceniza"): chat #1a1a1e,
      fondo #121214. El panel lateral usa el color del chat para separarse
      del fondo */
@@ -127,6 +144,14 @@
 }
 
 :root[data-theme="sunset"] {
+  --glass-bg: rgba(255, 250, 243, 0.36);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shine: rgba(255, 255, 255, 0.35);
+  --glass-shadow: 0 20px 50px rgba(150, 70, 50, 0.18);
+  --glass-orb-1: #ffb08a;
+  --glass-orb-2: #d9a3d6;
+  --glass-orb-3: #f6a192;
+
   --bg-gradient: linear-gradient(
     to right top,
     #fff7ed,
