@@ -160,166 +160,179 @@ const Sidebar = () => {
     closeActiveNote();
   };
 
+  const collapse = () => {
+    play("panelClose");
+    setCollapsed(true);
+  };
+
   return (
-    <aside className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-options">
-        {collapsed ? (
-          <div className="sidebar-collapsed-content">
-            {user ? (
-              <div className="sidebar-avatar-only">
-                <img
-                  src={user?.user_metadata?.picture || "/default-avatar.png"}
-                  alt="Profile"
-                  className="sidebar-user-avatar"
-                />
-              </div>
-            ) : (
-              <div className="sidebar-user-info" onClick={handleSignIn}>
-                <User size={20} />
-              </div>
-            )}
-            <button
-              className="circular-button"
-              onClick={() => {
-                play("panelOpen");
-                setCollapsed(false);
-              }}
-              title="Expandir"
-            >
-              <CircleArrowRight />
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="sidebar-user-section">
-              {loading ? (
-                <div>Loading...</div>
-              ) : user ? (
-                <div
-                  className="sidebar-user-info"
-                  onClick={() => setIsProfileOpen(true)}
-                >
+    <>
+      {/* Solo en mobile (ver styles.css): con el panel abierto, tocar fuera
+          lo cierra y el toque no llega a la nota que queda detrás. Queda
+          siempre montada para que el oscurecido entre y salga con transición */}
+      <div
+        className={`sidebar-backdrop ${collapsed ? "" : "visible"}`}
+        aria-hidden="true"
+        onClick={collapse}
+      />
+      <aside className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-options">
+          {collapsed ? (
+            <div className="sidebar-collapsed-content">
+              {user ? (
+                <div className="sidebar-avatar-only">
                   <img
-                    src={user.user_metadata?.picture || "/default-avatar.png"}
+                    src={user?.user_metadata?.picture || "/default-avatar.png"}
                     alt="Profile"
                     className="sidebar-user-avatar"
                   />
-                  <span className="sidebar-user-name">
-                    {user.user_metadata?.full_name ||
-                      user.user_metadata?.name ||
-                      user.email}
-                  </span>
                 </div>
               ) : (
                 <div className="sidebar-user-info" onClick={handleSignIn}>
-                  <User size={20} className="sidebar-user-icon" />
-                  <span className="sidebar-user-name">Usuario local</span>
+                  <User size={20} />
                 </div>
               )}
+              <button
+                className="circular-button"
+                onClick={() => {
+                  play("panelOpen");
+                  setCollapsed(false);
+                }}
+                title="Expandir"
+              >
+                <CircleArrowRight />
+              </button>
             </div>
-            <div className="sidebar-action-buttons">
-              {activeNoteID !== null ? (
+          ) : (
+            <>
+              <div className="sidebar-user-section">
+                {loading ? (
+                  <div>Loading...</div>
+                ) : user ? (
+                  <div
+                    className="sidebar-user-info"
+                    onClick={() => setIsProfileOpen(true)}
+                  >
+                    <img
+                      src={user.user_metadata?.picture || "/default-avatar.png"}
+                      alt="Profile"
+                      className="sidebar-user-avatar"
+                    />
+                    <span className="sidebar-user-name">
+                      {user.user_metadata?.full_name ||
+                        user.user_metadata?.name ||
+                        user.email}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="sidebar-user-info" onClick={handleSignIn}>
+                    <User size={20} className="sidebar-user-icon" />
+                    <span className="sidebar-user-name">Usuario local</span>
+                  </div>
+                )}
+              </div>
+              <div className="sidebar-action-buttons">
+                {activeNoteID !== null ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNote(activeNoteID);
+                    }}
+                    className="circular-button"
+                    title="Borrar"
+                  >
+                    <Trash2 />
+                  </button>
+                ) : null}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNote(activeNoteID);
-                  }}
                   className="circular-button"
-                  title="Borrar"
+                  onClick={() => {
+                    addNote();
+                  }}
+                  title="Agregar nota"
                 >
-                  <Trash2 />
+                  <Plus />
                 </button>
-              ) : null}
-              <button
-                className="circular-button"
-                onClick={() => {
-                  addNote();
-                }}
-                title="Agregar nota"
-              >
-                <Plus />
-              </button>
-              <button
-                className="circular-button"
-                onClick={() => {
-                  play("panelClose");
-                  setCollapsed(true);
-                }}
-                title="Colapsar/Expandir"
-              >
-                <CircleArrowLeft />
-              </button>
+                <button
+                  className="circular-button"
+                  onClick={collapse}
+                  title="Colapsar/Expandir"
+                >
+                  <CircleArrowLeft />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        {!collapsed &&
+          (waitingResponse === "reorderingNotes" || reorderError) && (
+            <div className="sidebar-reorder-status" role="status">
+              {reorderError ? (
+                <span className="sidebar-reorder-error">{reorderError}</span>
+              ) : (
+                <>
+                  <Loader2 size={14} className="spinner-icon" />
+                  <span>Guardando orden…</span>
+                </>
+              )}
             </div>
-          </>
-        )}
-      </div>
-      {!collapsed &&
-        (waitingResponse === "reorderingNotes" || reorderError) && (
-          <div className="sidebar-reorder-status" role="status">
-            {reorderError ? (
-              <span className="sidebar-reorder-error">{reorderError}</span>
-            ) : (
-              <>
-                <Loader2 size={14} className="spinner-icon" />
-                <span>Guardando orden…</span>
-              </>
+          )}
+        {!collapsed && (
+          <div className="sidebar-notes-list">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToListBounds]}
+              onDragStart={vibrate}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={notes.map((note) => note.id!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {notes.map((note, index) => (
+                  <NoteItem
+                    id={note.id!}
+                    key={note.id!}
+                    title={note.title}
+                    enterIndex={
+                      isRevealing
+                        ? Math.min(index, MAX_STAGGERED_NOTES)
+                        : undefined
+                    }
+                    disabled={isReorderDisabled}
+                    onDobleClick={() => handleSecActiveNote(note.id!)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+            {notes.length === 0 &&
+              waitingResponse !== "gettingNotes" &&
+              waitingResponse !== "creatingNote" &&
+              !isRevealing && (
+                <div className="sidebar-empty-notes">
+                  <p className="sidebar-empty-title">Todavía no hay notas</p>
+                  <p className="sidebar-empty-hint">
+                    Tocá <Plus size={14} aria-label="más" /> para crear la
+                    primera
+                  </p>
+                </div>
+              )}
+            {waitingResponse === "creatingNote" && <FakeItemLoading />}
+            {(waitingResponse === "gettingNotes" || isRevealing) && (
+              <NotesSkeleton leaving={isRevealing} />
             )}
           </div>
         )}
-      {!collapsed && (
-        <div className="sidebar-notes-list">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            modifiers={[restrictToListBounds]}
-            onDragStart={vibrate}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={notes.map((note) => note.id!)}
-              strategy={verticalListSortingStrategy}
-            >
-              {notes.map((note, index) => (
-                <NoteItem
-                  id={note.id!}
-                  key={note.id!}
-                  title={note.title}
-                  enterIndex={
-                    isRevealing
-                      ? Math.min(index, MAX_STAGGERED_NOTES)
-                      : undefined
-                  }
-                  disabled={isReorderDisabled}
-                  onDobleClick={() => handleSecActiveNote(note.id!)}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-          {notes.length === 0 &&
-            waitingResponse !== "gettingNotes" &&
-            waitingResponse !== "creatingNote" &&
-            !isRevealing && (
-              <div className="sidebar-empty-notes">
-                <p className="sidebar-empty-title">Todavía no hay notas</p>
-                <p className="sidebar-empty-hint">
-                  Tocá <Plus size={14} aria-label="más" /> para crear la primera
-                </p>
-              </div>
-            )}
-          {waitingResponse === "creatingNote" && <FakeItemLoading />}
-          {(waitingResponse === "gettingNotes" || isRevealing) && (
-            <NotesSkeleton leaving={isRevealing} />
-          )}
-        </div>
-      )}
-      {!collapsed && (
-        <div className="sidebar-footer">
-          <ThemeSelector />
-          <SoundSelector />
-        </div>
-      )}
-      <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />
-    </aside>
+        {!collapsed && (
+          <div className="sidebar-footer">
+            <ThemeSelector />
+            <SoundSelector />
+          </div>
+        )}
+        <ProfileModal isOpen={isProfileOpen} onClose={handleOnCloseeProfile} />
+      </aside>
+    </>
   );
 };
 
