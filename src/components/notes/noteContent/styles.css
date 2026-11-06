@@ -190,7 +190,8 @@
 
 .composer:focus-within {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 15%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--primary-color) 15%, transparent);
 }
 
 .composer-input {
@@ -328,10 +329,12 @@
 
 @keyframes dictationPulse {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color) 45%, transparent);
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--primary-color) 45%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 10px color-mix(in srgb, var(--primary-color) 0%, transparent);
+    box-shadow: 0 0 0 10px
+      color-mix(in srgb, var(--primary-color) 0%, transparent);
   }
 }
 
@@ -343,7 +346,8 @@
 
 .thinking-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 10%, transparent);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--primary-color) 10%, transparent);
   background-color: var(--surface-alt);
 }
 
@@ -352,14 +356,33 @@
   font-style: italic;
 }
 
+/* Cada idea: viñeta lila a la altura de la primera línea, con aire entre ideas */
 .thinking-text-container {
+  --thinking-pad-y: 10px;
+  --thinking-line: 1.6;
   position: relative;
   display: flex;
+  flex-shrink: 0;
   align-items: flex-start;
   gap: 8px;
-  padding: 8px 12px;
+  padding: var(--thinking-pad-y) 12px var(--thinking-pad-y) 28px;
+  border-radius: 8px;
   transition: background-color 0.2s ease;
-  border-left: 2px solid var(--primary-color);
+}
+
+/* Viñeta centrada en la primera línea de texto */
+.thinking-text-container::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: calc(var(--thinking-pad-y) + 0.95rem * var(--thinking-line) / 2 - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .thinking-text-container:hover {
@@ -369,6 +392,7 @@
 .thinking-text {
   width: 100%;
   font-size: 0.95rem;
+  line-height: var(--thinking-line);
   color: var(--text);
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -397,7 +421,7 @@
   transition: opacity 0.15s ease;
 }
 
-/* Línea separadora entre el texto y las acciones (85% del alto, gris suave) */
+/* Línea separadora entre el texto y las acciones (85% del alto, color del tema) */
 .thinking-actions::before {
   content: "";
   position: absolute;
@@ -405,7 +429,7 @@
   top: 7.5%;
   width: 1px;
   height: 85%;
-  background-color: color-mix(in srgb, var(--text) 22%, transparent);
+  background-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
 }
 
 .thinking-text-container:hover .thinking-actions,
@@ -555,6 +579,9 @@
 
 .thinkings-container {
   /* max-height: 100%; */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   flex-grow: 1;
   overflow-y: auto;
 }
@@ -641,8 +668,10 @@
   padding: 0 2px;
 }
 
-.thinking-has-match {
-  border-left: 2px solid var(--highlight);
+/* Ideas que coinciden con la búsqueda: la viñeta pasa al color de resaltado */
+.thinking-has-match::before {
+  background-color: var(--highlight);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 30%, transparent);
 }
 
 .title-actions {
