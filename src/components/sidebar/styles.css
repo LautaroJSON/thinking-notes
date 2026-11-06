@@ -22,8 +22,7 @@
   box-sizing: border-box;
 
   position: relative;
-  /* Por encima del contenido de la nota: el menú de temas del panel
-     colapsado se abre hacia la derecha */
+  /* Por encima del contenido de la nota */
   z-index: 2;
   top: 50%;
   transform: translateY(-50%);
@@ -38,43 +37,93 @@
 
   animation: slideInBounce 0.6s ease-out;
 
-  /* Cápsula colapsada: altura según su contenido (avatar, expandir, temas).
-     Se ancla por arriba en la misma posición que tenía con 76 px de alto
-     (10% - 76/2), porque con translateY(-50%) subiría al crecer. */
+  /* Cápsula colapsada (avatar y expandir, centrados en vertical).
+     Todas las propiedades que cambian son animables: alto fijo en vez de
+     auto y el mismo translateY(-50%) que el panel abierto, así ancho, alto
+     y posición se interpolan juntos y el cierre no salta.
+     El centro queda donde estaba la cápsula de antes (10% - 38px + 60px). */
   &.collapsed {
-    top: calc(10% - 38px);
-    transform: none;
+    top: calc(10% + 22px);
     /* En la grilla de .main-container no debe estirarse a todo el alto */
     align-self: start;
     width: 80px;
-    height: auto;
-    min-height: 76px;
-    padding: 16px 0;
+    height: 120px;
+    padding: 0;
 
     .sidebar-options {
+      flex: 1;
       padding: 0;
     }
   }
 
-  transition: all 0.3s ease;
+  transition:
+    width var(--sidebar-ease),
+    height var(--sidebar-ease),
+    top var(--sidebar-ease),
+    padding var(--sidebar-ease),
+    box-shadow var(--sidebar-ease);
+  --sidebar-ease: 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* El contenido de la cápsula aparece cuando el panel ya casi terminó de
+   cerrarse, en lugar de saltar adentro del panel todavía ancho */
+.sidebar-collapsed-content {
+  animation: sidebar-collapsed-in 0.3s ease-out 0.15s both;
+}
+
+@keyframes sidebar-collapsed-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-container,
+  .sidebar-collapsed-content {
+    transition: none;
+    animation: none;
+  }
 }
 
 @media (max-width: 768px) {
   .sidebar-container {
     z-index: 1;
+    /* Píldora compacta (avatar + expandir en fila) centrada en la barra de
+       herramientas de la nota (56 px de alto → centro a 28 px), sin bajar
+       hasta el título */
     &.collapsed {
-      top: 4px;
-      transform: none;
+      top: 28px;
       box-shadow: var(--shadow-panel-soft);
-      width: 60px;
-      /* En celular la cápsula queda como antes (avatar + expandir en fila,
-         a la altura de la barra de la nota); el selector de temas se usa
-         desde el pie del panel expandido */
-      height: 76px;
-      padding: 20px 0;
+      width: 76px;
+      height: 44px;
+      padding: 0;
 
       .sidebar-options {
-        padding: 0px 20px 0px 0px;
+        padding: 0 6px 0 0;
+      }
+
+      .sidebar-user-info {
+        padding: 4px;
+      }
+
+      .sidebar-user-avatar {
+        width: 28px;
+        height: 28px;
+      }
+
+      .circular-button {
+        width: 30px;
+        height: 30px;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
       }
     }
   }
@@ -83,10 +132,6 @@
     flex-direction: row;
     justify-content: space-between;
     gap: 4px;
-  }
-
-  .sidebar-collapsed-theme {
-    display: none;
   }
 }
 
@@ -167,6 +212,11 @@
   background-color: var(--surface-hover);
 }
 
+.sidebar-user-avatar,
+.sidebar-user-icon {
+  flex-shrink: 0;
+}
+
 .sidebar-user-avatar {
   width: 32px;
   height: 32px;
@@ -231,4 +281,31 @@
   display: flex;
   align-items: center;
   padding: 4px 16px 0;
+}
+
+/* Estado vacío de la lista de notas */
+.sidebar-empty-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 32px 16px;
+  text-align: center;
+  animation: fade-in-reorder-status 0.3s ease-out;
+}
+
+.sidebar-empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.sidebar-empty-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-subtle);
 }

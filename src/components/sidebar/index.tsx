@@ -180,9 +180,6 @@ const Sidebar = () => {
             >
               <CircleArrowRight />
             </button>
-            <div className="sidebar-collapsed-theme">
-              <ThemeSelector placement="right" />
-            </div>
           </div>
         ) : (
           <>
@@ -207,8 +204,8 @@ const Sidebar = () => {
                 </div>
               ) : (
                 <div className="sidebar-user-info" onClick={handleSignIn}>
-                  <User size={20} />
-                  <span>Usuario local</span>
+                  <User size={20} className="sidebar-user-icon" />
+                  <span className="sidebar-user-name">Usuario local</span>
                 </div>
               )}
             </div>
@@ -258,8 +255,8 @@ const Sidebar = () => {
             )}
           </div>
         )}
-      <div className="sidebar-notes-list">
-        {!collapsed && (
+      {!collapsed && (
+        <div className="sidebar-notes-list">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -287,15 +284,23 @@ const Sidebar = () => {
               ))}
             </SortableContext>
           </DndContext>
-        )}
-        {!collapsed && waitingResponse === "creatingNote" && (
-          <FakeItemLoading />
-        )}
-        {!collapsed &&
-          (waitingResponse === "gettingNotes" || isRevealing) && (
+          {notes.length === 0 &&
+            waitingResponse !== "gettingNotes" &&
+            waitingResponse !== "creatingNote" &&
+            !isRevealing && (
+              <div className="sidebar-empty-notes">
+                <p className="sidebar-empty-title">Todavía no hay notas</p>
+                <p className="sidebar-empty-hint">
+                  Tocá <Plus size={14} aria-label="más" /> para crear la primera
+                </p>
+              </div>
+            )}
+          {waitingResponse === "creatingNote" && <FakeItemLoading />}
+          {(waitingResponse === "gettingNotes" || isRevealing) && (
             <NotesSkeleton leaving={isRevealing} />
           )}
-      </div>
+        </div>
+      )}
       {!collapsed && (
         <div className="sidebar-footer">
           <ThemeSelector />
