@@ -368,11 +368,6 @@ const ActiveNoteView = () => {
             size={17}
           />
           <DownloadMenu note={ActiveNote} />
-          <NoteInfo
-            key={activeNoteId}
-            createdAt={ActiveNote?.createdAt}
-            updatedAt={ActiveNote?.updatedAt}
-          />
         </div>
       </div>
 
@@ -384,6 +379,11 @@ const ActiveNoteView = () => {
           placeholder="Sin título"
           className="title-input"
           aria-label="Título de la nota"
+        />
+        <NoteInfo
+          key={activeNoteId}
+          createdAt={ActiveNote?.createdAt}
+          updatedAt={ActiveNote?.updatedAt}
         />
       </div>
 

@@ -1074,6 +1074,50 @@
   color: var(--text);
 }
 
+/* Fechas como metadato bajo el título ("Editada hace 2 horas") */
+.note-meta {
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.note-meta-toggle {
+  padding: 2px 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+  cursor: pointer;
+  text-decoration: underline dotted transparent;
+  text-underline-offset: 3px;
+  transition:
+    color 0.2s ease,
+    text-decoration-color 0.2s ease;
+}
+
+.note-meta-toggle:hover,
+.note-meta-toggle[aria-expanded="true"] {
+  color: var(--text-muted);
+  text-decoration-color: currentColor;
+}
+
+.note-meta-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Se abre hacia la derecha, alineado con el texto */
+.note-meta-popover {
+  right: auto;
+  left: 0;
+}
+
+.note-meta-popover::before {
+  right: auto;
+  left: 14px;
+}
+
 /* ===== Imágenes en los pensamientos ===== */
 
 /* Con imágenes adjuntas, la bandeja ocupa su propia fila arriba del texto */

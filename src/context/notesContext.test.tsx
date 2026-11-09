@@ -261,7 +261,7 @@ describe("NotesProvider", () => {
       expect(screen.getByDisplayValue("Idea editada")).toBeTruthy();
 
       // La nota activa refleja la fecha de modificación que devolvió la API
-      fireEvent.click(screen.getByLabelText("Información de la nota"));
+      fireEvent.click(screen.getByLabelText(/Ver fechas de la nota/));
       expect(screen.getByText(/1 de noviembre de 2026/)).toBeTruthy();
       expect(screen.getByText(/5 de noviembre de 2026/)).toBeTruthy();
     });

@@ -1,12 +1,15 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import useSounds from "@/hooks/useSounds";
-import { CircleAlert } from "lucide-react";
-import { formatNoteDate } from "@/components/utils/dates";
+import { formatNoteDate, formatRelativeNoteDate } from "@/components/utils/dates";
 
 const UNAVAILABLE = "No disponible";
+const HOVER_OPEN_DELAY = 300;
+const HOVER_CLOSE_DELAY = 150;
+const TICK = 30_000;
 
-// Botón que despliega las fechas de creación y última modificación de la nota.
-// Se cierra al tocar afuera o con Escape.
+// Línea suave bajo el título ("Editada hace 2 horas") que despliega las fechas
+// completas. Con mouse se abre al pasar por encima; con un toque o clic queda
+// fija hasta tocar afuera o apretar Escape.
 const NoteInfo = ({
   createdAt,
   updatedAt,
@@ -14,19 +17,32 @@ const NoteInfo = ({
   createdAt?: string;
   updatedAt?: string;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  // "hover": abierto por pasar el mouse (se cierra al salir).
+  // "pinned": abierto por clic o toque (se cierra al tocar afuera o con Escape).
+  const [mode, setMode] = useState<"closed" | "hover" | "pinned">("closed");
+  const [now, setNow] = useState(() => Date.now());
   const containerRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<number | undefined>(undefined);
   const popoverId = useId();
+  const isOpen = mode !== "closed";
 
   const { play } = useSounds();
 
+  // Mantiene el tiempo relativo al día sin depender de otros renders
   useEffect(() => {
-    if (!isOpen) return;
+    const id = window.setInterval(() => setNow(Date.now()), TICK);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+
+  useEffect(() => {
+    if (mode !== "pinned") return;
     const closeMenu = () => {
-      setIsOpen(false);
+      setMode("closed");
       play("close");
     };
-    const handlePointerDown = (e: PointerEvent) => {
+    const handlePointerDown = (e: globalThis.PointerEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) closeMenu();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,28 +54,72 @@ const NoteInfo = ({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, play]);
+  }, [mode, play]);
 
+  // Escape también cierra lo abierto con el mouse, sin sonido
+  useEffect(() => {
+    if (mode !== "hover") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMode("closed");
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mode]);
+
+  // Sin fechas no hay nada que mostrar. Si falta la de edición, se usa la de creación.
+  const relative = updatedAt
+    ? formatRelativeNoteDate(updatedAt, now)
+    : formatRelativeNoteDate(createdAt, now);
+  if (!relative) return null;
+  const label = `${updatedAt ? "Editada" : "Creada"} ${relative}`;
+
+  const scheduleHover = (next: "hover" | "closed", delay: number) => {
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(
+      () => setMode((prev) => (prev === "pinned" ? prev : next)),
+      delay,
+    );
+  };
+
+  const handlePointerEnter = (e: PointerEvent) => {
+    if (e.pointerType === "mouse") scheduleHover("hover", HOVER_OPEN_DELAY);
+  };
+
+  const handlePointerLeave = (e: PointerEvent) => {
+    if (e.pointerType === "mouse") scheduleHover("closed", HOVER_CLOSE_DELAY);
+  };
+
+  // Un clic sobre lo abierto por hover lo fija. Uno sobre lo fijado lo cierra.
   const toggle = () => {
-    play(isOpen ? "close" : "select");
-    setIsOpen((prev) => !prev);
+    window.clearTimeout(hoverTimer.current);
+    if (mode === "pinned") {
+      play("close");
+      setMode("closed");
+    } else {
+      play("select");
+      setMode("pinned");
+    }
   };
 
   return (
-    <div className="note-info" ref={containerRef}>
+    <div
+      className="note-info note-meta"
+      ref={containerRef}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+    >
       <button
         type="button"
         onClick={toggle}
-        className="action-btn note-info-toggle"
-        title="Información de la nota"
-        aria-label="Información de la nota"
+        className="note-meta-toggle"
+        aria-label={`${label}. Ver fechas de la nota`}
         aria-expanded={isOpen}
         aria-controls={popoverId}
       >
-        <CircleAlert size={17} />
+        {label}
       </button>
       {isOpen && (
-        <div id={popoverId} className="note-info-popover">
+        <div id={popoverId} className="note-info-popover note-meta-popover">
           <dl>
             <div>
               <dt>Creada</dt>
